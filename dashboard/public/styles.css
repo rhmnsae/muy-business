@@ -352,3 +352,29 @@ textarea{min-height:360px;resize:vertical;line-height:1.65;font-family:ui-monosp
     margin-right: 0;
   }
 }
+
+
+/* Insight card spacing polish: prevent stacked feature cards from touching. */
+.card > .feature-card + .feature-card,
+.card > .insight-card + .insight-card,
+.card > .softbox + .feature-card,
+.card > .feature-card + .softbox {
+  margin-top: 20px !important;
+}
+.card > h3 + .feature-card,
+.card > h3 + .insight-card {
+  margin-top: 16px !important;
+}
+.card > .feature-card,
+.card > .insight-card {
+  margin-bottom: 0;
+}
+.card:has(> h3 + .feature-card) {
+  padding-bottom: 28px;
+}
+@media(max-width:620px){
+  .card > .feature-card + .feature-card,
+  .card > .insight-card + .insight-card {
+    margin-top: 16px !important;
+  }
+}
