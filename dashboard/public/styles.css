@@ -308,3 +308,47 @@ textarea{min-height:360px;resize:vertical;line-height:1.65;font-family:ui-monosp
 .admin-client-card:nth-child(4n+4){background:linear-gradient(135deg,#fff 0%,#ffe8ed 100%)}
 @media(max-width:1220px){.overview-layout{grid-template-columns:1fr}.overview-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.overview-kpis{grid-template-columns:1fr}.overview-kpis .kpi{min-height:126px}.bar-chart{grid-auto-columns:68px;height:260px;padding-inline:14px}.overview-chart-card,.overview-control-card{box-shadow:7px 7px 0 var(--line)}}
+
+
+/* Button spacing polish: keep action buttons from touching each other. */
+.actionbar,
+.row,
+.admin-actions,
+.export-actions,
+.kb-actionbar,
+.kb-card-actions,
+.section-row-actions {
+  gap: 16px !important;
+  row-gap: 14px !important;
+}
+.actionbar {
+  margin-top: 22px;
+  padding-top: 4px;
+}
+.actionbar button,
+.row button,
+.admin-actions button,
+.export-actions button,
+.kb-actionbar button {
+  margin: 0 4px 6px 0;
+}
+.identity-grid + .actionbar,
+.mini-table + .actionbar {
+  margin-top: 24px;
+}
+@media(max-width:620px){
+  .actionbar,
+  .row,
+  .admin-actions,
+  .export-actions,
+  .kb-actionbar {
+    gap: 12px !important;
+  }
+  .actionbar button,
+  .row button,
+  .admin-actions button,
+  .export-actions button,
+  .kb-actionbar button {
+    margin-right: 0;
+  }
+}
