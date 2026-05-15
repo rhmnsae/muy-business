@@ -1466,3 +1466,19 @@ ul,
     right: 16px;
   }
 }
+
+
+/* Knowledge quality check cleanup: no click animation, cleaner checked state. */
+.focus-pulse {
+  animation: none !important;
+}
+.kb-actionbar .kb-save-state.saved,
+.kb-actionbar .kb-save-state.dirty {
+  background: var(--green) !important;
+  color: var(--ink) !important;
+}
+.kb-tools,
+.kb-side,
+.compact-card {
+  scroll-margin-top: 28px;
+}
