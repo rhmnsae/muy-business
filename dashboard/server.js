@@ -28,6 +28,8 @@ const pool = DATABASE_URL ? new Pool({
     : undefined
 }) : null;
 const waSockets = new Map();
+const pairingJobs = new Map();
+const BUSINESS_UNIT = process.env.MUY_BUSINESS_SERVICE_UNIT || 'muy-business-openclaw.service';
 
 app.use(express.json({ limit: '2mb' }));
 app.use((req, res, next) => {
@@ -70,6 +72,27 @@ async function readWhatsappIdentity(slug) {
   const me = creds?.me || null;
   const paired = !!me && creds?.registered !== false;
   return { paired, registered: creds?.registered === true, name: me?.name || '', number: jidToPhone(me?.id), jid: me?.id || '', lid: me?.lid || '', platform: creds?.platform || '', authDir: path.join(WA_CREDS, slug) };
+}
+
+async function waitForWhatsappIdentity(slug, tries=8, delayMs=900) {
+  for (let i=0;i<tries;i++) {
+    const id = await readWhatsappIdentity(slug);
+    if (id.paired) return id;
+    await new Promise(r=>setTimeout(r, delayMs));
+  }
+  return readWhatsappIdentity(slug);
+}
+async function finalizeWhatsappConnected(slug, authDir, sock=null) {
+  const dir = path.join(TENANTS, slug);
+  await fs.mkdir(dir, { recursive:true });
+  await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString());
+  for (const f of ['qr.txt','qr.png','qr.svg','pairing.txt']) await fs.rm(path.join(dir, f), { force:true });
+  await updateWhatsappAccount(slug, true);
+  try { sock?.end?.(); } catch {}
+  waSockets.delete(slug);
+  await upsertPairingDb(slug, { status:'connected', qr:'', qrType:'text', note:'WhatsApp sudah terhubung dan session tersimpan. Service bot sedang/akan memakai nomor ini.', authDir, connectedAt:new Date().toISOString() });
+  await restartBusinessGateway();
+  return true;
 }
 async function sessionStore() { return readJson(path.join(ROOT, '.openclaw', 'agents', 'main', 'sessions', 'sessions.json'), {}); }
 async function readJsonl(file) { try { return (await fs.readFile(file, 'utf8')).split('\n').filter(Boolean).map(line => { try { return JSON.parse(line); } catch { return null; } }).filter(Boolean); } catch { return []; } }
@@ -120,11 +143,11 @@ async function tenantStats(slug) {
 }
 async function whatsappDiagnostics(slug) {
   let recent = '';
-  try { recent = (await execFileP('journalctl', ['--user','-u','openclaw-business.service','-n','220','--no-pager'], { timeout: 8000 })).stdout; } catch {}
+  try { recent = (await execFileP('journalctl', ['--user','-u',BUSINESS_UNIT,'-n','220','--no-pager'], { timeout: 8000 })).stdout; } catch {}
   const lines = recent.split('\n').filter(x => x.includes('[whatsapp]') || x.includes(`whatsapp:${slug}`) || x.includes(`[${slug}]`)).slice(-40);
   const inbound = lines.filter(x => x.includes('Inbound message')).length;
   const provider = lines.reverse().find(x => x.includes(`[whatsapp] [${slug}] starting provider`)) || '';
-  return { service: await serviceState('openclaw-business.service'), inboundRecent: inbound, providerLine: provider, recent: lines.reverse().slice(-12).join('\n') };
+  return { service: await serviceState(BUSINESS_UNIT), inboundRecent: inbound, providerLine: provider, recent: lines.reverse().slice(-12).join('\n') };
 }
 async function updateWhatsappAccount(slug, enabled) {
   const cfg = await readJson(OPENCLAW_CONFIG, {});
@@ -137,7 +160,10 @@ async function updateWhatsappAccount(slug, enabled) {
   await writeJson(OPENCLAW_CONFIG, cfg);
   return path.join(WA_CREDS, slug);
 }
-async function restartBusinessGateway() { try { await execFileP('systemctl', ['--user','restart','openclaw-business.service'], { timeout:15000 }); } catch {} }
+async function serviceCtl(action, timeout=15000, noBlock=false) { try { const args=['--user', action]; if(noBlock) args.push('--no-block'); args.push(BUSINESS_UNIT); await execFileP('systemctl', args, { timeout }); return true; } catch { return false; } }
+async function restartBusinessGateway() { return serviceCtl('restart', 3000, true); }
+async function stopBusinessGateway() { return serviceCtl('stop', 3000, true); }
+async function startBusinessGateway() { return serviceCtl('start', 3000, true); }
 async function upsertPairingDb(slug, data={}) {
   try {
     await query(`insert into client_whatsapp_pairing(slug,status,qr,qr_type,note,auth_dir,connected_at,disconnected_at,refreshed_at,updated_at)
@@ -160,7 +186,8 @@ async function tenantPairing(slug) {
   }
   const identity = await readWhatsappIdentity(slug);
   const markerConnected = fss.existsSync(path.join(dir, 'whatsapp-connected'));
-  const connected = identity.paired && markerConnected;
+  const connected = identity.paired;
+  if (identity.paired && !markerConnected) { try { await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString()); await updateWhatsappAccount(slug, true); await restartBusinessGateway(); } catch {} }
   const status = connected ? 'connected' : (qr ? 'scan_required' : 'not_ready');
   const note = connected ? 'WhatsApp sudah memiliki sesi tertaut. Jika belum membalas, restart service bot.' : (qr ? 'Scan QR dari WhatsApp perangkat client.' : 'Klik Refresh QR untuk membuat QR pairing WhatsApp.');
   const result = { slug, status, qr: connected ? '' : qr, qrType, updatedAt: new Date().toISOString(), authDir, note };
@@ -172,38 +199,116 @@ async function startWhatsappPairing(slug) {
   const authDir = await updateWhatsappAccount(slug, false); await fs.mkdir(authDir, { recursive:true });
   try { waSockets.get(slug)?.end?.(); } catch {}
   waSockets.delete(slug);
-  await fs.rm(path.join(dir, 'qr.txt'), { force:true });
-  await fs.rm(path.join(dir, 'qr.png'), { force:true });
-  await fs.rm(path.join(dir, 'qr.svg'), { force:true });
-  await fs.rm(path.join(dir, 'pairing.txt'), { force:true });
-  await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true });
+  await upsertPairingDb(slug, { status:'preparing', qr:'', qrType:'text', note:'Menyiapkan session pairing baru. Service bot dihentikan sebentar agar folder session tidak bentrok.', authDir, refreshedAt:new Date().toISOString() });
+  await stopBusinessGateway();
+  for (const f of ['qr.txt','qr.png','qr.svg','pairing.txt','whatsapp-connected']) await fs.rm(path.join(dir, f), { force:true });
   await fs.rm(authDir, { recursive:true, force:true });
   await fs.mkdir(authDir, { recursive:true });
-  await restartBusinessGateway();
-  const { state, saveCreds } = await useMultiFileAuthState(authDir);
-  const sock = makeWASocket({ auth: state, printQRInTerminal: false, browser: Browsers.macOS('Chrome') });
-  waSockets.set(slug, sock);
-  sock.ev.on('creds.update', saveCreds);
-  sock.ev.on('connection.update', async (u) => {
-    if (u.qr) {
-      await fs.writeFile(path.join(dir, 'qr.txt'), u.qr);
-      await fs.writeFile(path.join(dir, 'qr.png'), (await QRCode.toDataURL(u.qr)).replace(/^data:image\/png;base64,/, ''), 'base64');
-      await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true });
-      await upsertPairingDb(slug, { status:'scan_required', qr:'data:image/png;base64,' + (await fs.readFile(path.join(dir, 'qr.png'), 'base64')), qrType:'image', note:'Scan QR dari WhatsApp perangkat client.', authDir, refreshedAt:new Date().toISOString() });
-    }
-    if (u.connection === 'open') { await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString()); await fs.rm(path.join(dir, 'qr.txt'), { force:true }); await fs.rm(path.join(dir, 'qr.png'), { force:true }); await updateWhatsappAccount(slug, true); try { sock.end(); } catch {} waSockets.delete(slug); await upsertPairingDb(slug, { status:'connected', qr:'', qrType:'text', note:'WhatsApp sudah terhubung.', authDir, connectedAt:new Date().toISOString() }); await restartBusinessGateway(); }
-    if (u.connection === 'close') {
-      const code = u.lastDisconnect?.error?.output?.statusCode;
-      if (code === DisconnectReason.loggedOut) { await fs.rm(authDir, { recursive:true, force:true }); await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true }); }
-      else { const id = await readWhatsappIdentity(slug); if (id.paired) { await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString()); await fs.rm(path.join(dir, 'qr.txt'), { force:true }); await fs.rm(path.join(dir, 'qr.png'), { force:true }); await updateWhatsappAccount(slug, true); try { sock.end(); } catch {} waSockets.delete(slug); await upsertPairingDb(slug, { status:'connected', qr:'', qrType:'text', note:'WhatsApp sudah terhubung.', authDir, connectedAt:new Date().toISOString() }); await restartBusinessGateway(); } else { await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true }); await upsertPairingDb(slug, { status:'scan_required', note:'QR belum berhasil login. Scan ulang dengan koneksi WhatsApp yang stabil.', authDir }); } }
-    }
-  });
-  await new Promise(r => setTimeout(r, 2500));
+  try {
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    const sock = makeWASocket({ auth: state, printQRInTerminal: false, browser: Browsers.macOS('Chrome'), syncFullHistory:false, markOnlineOnConnect:false });
+    waSockets.set(slug, sock);
+    sock.ev.on('creds.update', saveCreds);
+    let settled = false;
+    const waitFirst = new Promise(resolve => {
+      const done = () => { if (!settled) { settled = true; resolve(); } };
+      const timer = setTimeout(async () => {
+        try {
+          await upsertPairingDb(slug, { status:'failed', qr:'', qrType:'text', note:'QR belum keluar dari WhatsApp server dalam 30 detik. Coba klik Refresh QR lagi dan pastikan koneksi server stabil.', authDir, refreshedAt:new Date().toISOString() });
+          try { sock.end(); } catch {}
+          waSockets.delete(slug);
+          await startBusinessGateway();
+        } catch {}
+        done();
+      }, 30000);
+      sock.ev.on('connection.update', async (u) => {
+        try {
+          if (u.qr) {
+            const png = (await QRCode.toDataURL(u.qr, { margin: 1, width: 320 })).replace(/^data:image\/png;base64,/, '');
+            await fs.writeFile(path.join(dir, 'qr.txt'), u.qr);
+            await fs.writeFile(path.join(dir, 'qr.png'), png, 'base64');
+            await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true });
+            await upsertPairingDb(slug, { status:'scan_required', qr:'data:image/png;base64,' + png, qrType:'image', note:'QR baru siap. Scan dari WhatsApp perangkat client dalam beberapa detik sebelum kadaluarsa.', authDir, refreshedAt:new Date().toISOString() });
+            clearTimeout(timer); done();
+          }
+          if (u.connection === 'open') {
+            await finalizeWhatsappConnected(slug, authDir, sock);
+            clearTimeout(timer); done();
+          }
+          if (u.connection === 'close') {
+            const code = u.lastDisconnect?.error?.output?.statusCode;
+            if (code === 515) await new Promise(r=>setTimeout(r, 2200));
+            if (code === DisconnectReason.loggedOut) { await fs.rm(authDir, { recursive:true, force:true }); await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true }); }
+            const id = await waitForWhatsappIdentity(slug, code===515?12:4, code===515?1000:700);
+            if (id.paired) {
+              await finalizeWhatsappConnected(slug, authDir, sock);
+            } else {
+              await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true });
+              await upsertPairingDb(slug, { status:'scan_required', note: code===515?'Pairing hampir selesai tapi WhatsApp meminta restart koneksi. Klik Refresh QR sekali lagi jika status belum berubah connected dalam beberapa detik.':'QR belum berhasil login. Klik Refresh QR untuk membuat QR baru, lalu scan segera dari WhatsApp client.', authDir });
+            }
+            clearTimeout(timer); done();
+          }
+        } catch (e) {
+          await upsertPairingDb(slug, { status:'failed', qr:'', qrType:'text', note:'Pairing error: '+String(e.message||e).slice(0,180), authDir });
+          clearTimeout(timer); done();
+        }
+      });
+    });
+    await waitFirst;
+  } catch (e) {
+    await upsertPairingDb(slug, { status:'failed', qr:'', qrType:'text', note:'Gagal membuat QR: '+String(e.message||e).slice(0,180), authDir, refreshedAt:new Date().toISOString() });
+  }
   return tenantPairing(slug);
 }
 
-async function serviceState(name) { try { return (await execFileP('systemctl', ['--user', 'is-active', name], { timeout: 5000 })).stdout.trim(); } catch (e) { return (e.stdout || e.stderr || 'inactive').trim(); } }
-async function telegramBotState() { let active = await serviceState('openclaw-business.service'); let bot = '@businessmuy_bot'; let recent = ''; try { recent = (await execFileP('journalctl', ['--user','-u','openclaw-business.service','-n','80','--no-pager'], { timeout: 8000 })).stdout; } catch {} return { service: active, bot, connected: /starting provider \(@businessmuy_bot\)|sendMessage ok|telegram/i.test(recent), detail: recent.split('\n').filter(x=>x.includes('@businessmuy_bot')||x.includes('[telegram]')).slice(-5).join('\n') }; }
+async function queueWhatsappPairing(slug) {
+  const current = pairingJobs.get(slug);
+  if (current) return current;
+  const job = (async () => {
+    try { return await startWhatsappPairing(slug); }
+    finally { pairingJobs.delete(slug); }
+  })();
+  pairingJobs.set(slug, job);
+  return job;
+}
+function runWhatsappPairing(slug) {
+  queueWhatsappPairing(slug).catch(async e => {
+    const authDir = path.join(WA_CREDS, slug);
+    await upsertPairingDb(slug, { status:'failed', qr:'', qrType:'text', note:'Gagal membuat QR: '+String(e.message||e).slice(0,180), authDir, refreshedAt:new Date().toISOString() });
+    await startBusinessGateway();
+  });
+}
+
+
+async function serviceState(name) {
+  try {
+    const out = (await execFileP('systemctl', ['--user', 'is-active', name], { timeout: 5000 })).stdout.trim();
+    return out || 'inactive';
+  } catch (e) {
+    const raw = String(e.stdout || e.stderr || '').trim().toLowerCase();
+    if (raw.includes('inactive')) return 'inactive';
+    if (raw.includes('failed')) return 'failed';
+    if (raw.includes('activating')) return 'activating';
+    if (raw.includes('deactivating')) return 'deactivating';
+    if (raw.includes('could not be found') || raw.includes('not-found') || raw.includes('not found')) return 'not installed';
+    return 'inactive';
+  }
+}
+async function serviceEnabledState(name) {
+  try {
+    const out = (await execFileP('systemctl', ['--user','is-enabled', name], { timeout: 5000 })).stdout.trim();
+    return out || 'disabled';
+  } catch (e) {
+    const raw = String(e.stdout || e.stderr || '').trim().toLowerCase();
+    if (raw.includes('enabled')) return 'enabled';
+    if (raw.includes('disabled')) return 'disabled';
+    if (raw.includes('static')) return 'static';
+    if (raw.includes('masked')) return 'masked';
+    if (raw.includes('not-found') || raw.includes('no such file') || raw.includes('not found')) return 'not installed';
+    return 'disabled';
+  }
+}
+async function telegramBotState() { let active = await serviceState(BUSINESS_UNIT); let bot = '@businessmuy_bot'; let recent = ''; try { recent = (await execFileP('journalctl', ['--user','-u',BUSINESS_UNIT,'-n','80','--no-pager'], { timeout: 8000 })).stdout; } catch {} return { service: active, bot, connected: /starting provider \(@businessmuy_bot\)|sendMessage ok|telegram/i.test(recent), detail: recent.split('\n').filter(x=>x.includes('@businessmuy_bot')||x.includes('[telegram]')).slice(-5).join('\n') }; }
 
 async function query(sql, params=[]) { if (!pool) throw new Error('Database belum dikonfigurasi'); return pool.query(sql, params); }
 
@@ -369,7 +474,14 @@ async function initDb() {
   const defaultAdminPasswordHash = legacy?.adminPasswordHash || sha(process.env.MUY_DASHBOARD_ADMIN_PASSWORD || 'admin12345');
   await query(`insert into dashboard_auth(key,value) values('adminUsernameHash',$1) on conflict (key) do nothing`, [JSON.stringify(sha(defaultAdminUsername))]);
   await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict (key) do nothing`, [JSON.stringify(defaultAdminPasswordHash)]);
-  await query(`insert into tenant_kb(slug,content,updated_at) select c.slug, $1 || c.name || $2 || coalesce(nullif(c.whatsapp,''),'Belum diisi') || $3, now() from clients c left join tenant_kb k on k.slug=c.slug where k.slug is null or btrim(k.content)=''`, [`# Knowledge Base `, `\n\n> Template awal ini otomatis dibuat dan tersimpan di database. Lengkapi setiap section dengan data bisnis asli sebelum bot live.\n\n${KB_DEFAULT_SECTIONS.map(([section, help]) => `## ${section}\n${help}\n\nStatus data: Belum dilengkapi.\nWhatsApp bisnis: `).join('\n\n')}`, `.\n`]);
+  const kbRows = await query(`select c.*, k.content from clients c left join tenant_kb k on k.slug=c.slug`);
+  for (const row of kbRows.rows) {
+    if (!hasKnowledgeScaffold(row.content)) {
+      const content = mergeExistingKnowledgeWithTemplate(row.content, sanitizeClient(row));
+      await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [row.slug, content]);
+      try { await fs.mkdir(path.join(TENANTS, row.slug), { recursive:true }); await fs.writeFile(tenantFile(row.slug), content); } catch {}
+    }
+  }
   if (process.env.MUY_MIGRATE_LEGACY_CLIENTS === '1') await migrateLegacyClients();
   await backfillSupabaseRuntime();
 }
@@ -466,14 +578,14 @@ app.post('/api/auth/client/login', async (req, res) => {
 
 app.get('/api/bot/status', requireClient, async (_req,res)=>res.json(await telegramBotState()));
 app.get('/api/status', requireAdmin, async (_req, res) => {
-  let service = await serviceState('openclaw-business.service');
+  let service = await serviceState(BUSINESS_UNIT);
   const r = await query(`select count(*)::int total, count(*) filter(where status='active')::int active from clients`);
   const db = await query(`select current_database() db, inet_server_addr()::text addr, inet_server_port() port`);
   res.json({ ok: true, service, db: 'supabase-postgres', supabase: db.rows[0], root: ROOT, clients: r.rows[0].total, activeClients: r.rows[0].active });
 });
 app.get('/api/clients', requireAdmin, async (_req, res) => { const r = await query(`select * from clients order by created_at desc`); res.json({ clients: r.rows.map(sanitizeClient) }); });
 app.get('/api/admin/dashboard', requireAdmin, async (_req, res) => {
-  const service = await serviceState('openclaw-business.service');
+  const service = await serviceState(BUSINESS_UNIT);
   const rows = await query(`select * from clients order by created_at desc`);
   const items = [];
   for (const row of rows.rows) {
@@ -514,11 +626,31 @@ app.patch('/api/clients/:slug', requireAdmin, async (req, res) => {
 });
 app.delete('/api/clients/:slug', requireAdmin, async (req, res) => { const slug=safeSlug(req.params.slug); const r=await query(`update clients set status='archived', archived_at=now(), updated_at=now() where slug=$1 returning *`, [slug]); if(!r.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); await auditLog(slug, 'admin', 'client.archive'); res.json({ ok:true, client:sanitizeClient(r.rows[0]) }); });
 app.get('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const c=await query(`select * from clients where slug=$1`, [slug]); if(!c.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); const content=await ensureKnowledgeBase(slug, sanitizeClient(c.rows[0])); res.json({ slug, content, score: kbQualityScore(content) }); });
-app.put('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const content=String(req.body?.content||''); await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [slug,content]); await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); await fs.writeFile(tenantFile(slug), content); const kbScore=kbQualityScore(content); await query(`insert into client_runtime_stats(slug,kb_score,updated_at) values($1,$2,now()) on conflict(slug) do update set kb_score=excluded.kb_score, updated_at=now()`, [slug,kbScore]); await auditLog(slug, req.authSession.role, 'knowledge.save', { chars: content.length, kbScore }); res.json({ ok:true, score:kbScore }); });
+app.put('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const c=await query(`select * from clients where slug=$1`, [slug]); if(!c.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); let content=String(req.body?.content||'').trim(); if(!content) content=defaultKnowledgeBase(sanitizeClient(c.rows[0])); if(!hasKnowledgeScaffold(content)) content=mergeExistingKnowledgeWithTemplate(content, sanitizeClient(c.rows[0])); await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [slug,content]); await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); await fs.writeFile(tenantFile(slug), content); const kbScore=kbQualityScore(content); await query(`insert into client_runtime_stats(slug,kb_score,updated_at) values($1,$2,now()) on conflict(slug) do update set kb_score=excluded.kb_score, updated_at=now()`, [slug,kbScore]); await auditLog(slug, req.authSession.role, 'knowledge.save', { chars: content.length, kbScore }); res.json({ ok:true, score:kbScore, content }); });
 app.get('/api/client/me', requireClient, async (req, res) => { const slug=req.authSession.role==='admin'?safeSlug(req.query.slug):req.authSession.slug; const r=await query(`select * from clients where slug=$1`, [slug]); if(!r.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); res.json({ client:sanitizeClient(r.rows[0]) }); });
 app.get('/api/clients/:slug/pairing', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); res.json(await tenantPairing(slug)); });
 app.get('/api/clients/:slug/dashboard', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const data=await buildClientDashboard(slug); if(!data) return res.status(404).json({ error:'Client tidak ditemukan' }); await auditLog(slug, req.authSession.role, 'dashboard.view'); res.json(data); });
-app.post('/api/clients/:slug/pairing/:action', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const action=req.params.action; await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); if(action==='disconnect'){ try { waSockets.get(slug)?.end?.(); } catch {} waSockets.delete(slug); await updateWhatsappAccount(slug, false); await fs.rm(path.join(TENANTS, slug, 'whatsapp-connected'), { force:true }); await fs.rm(path.join(TENANTS, slug, 'qr.txt'), { force:true }); await fs.rm(path.join(TENANTS, slug, 'qr.png'), { force:true }); await fs.rm(path.join(WA_CREDS, slug), { recursive:true, force:true }); await upsertPairingDb(slug, { status:'not_ready', qr:'', qrType:'text', note:'WhatsApp diputuskan dari dashboard.', authDir:path.join(WA_CREDS, slug), disconnectedAt:new Date().toISOString() }); await auditLog(slug, req.authSession.role, 'whatsapp.disconnect'); await restartBusinessGateway(); return res.json({ ok:true, pairing: await tenantPairing(slug) }); } if(action==='refresh'){ const pairing=await startWhatsappPairing(slug); await auditLog(slug, req.authSession.role, 'whatsapp.refresh_qr'); return res.json({ ok:true, pairing }); } return res.status(400).json({ error:'Action invalid' }); });
-app.post('/api/service/:action', requireAdmin, async (req, res) => { const action=req.params.action; if(!['restart','start','stop'].includes(action)) return res.status(400).json({ error:'Action invalid' }); try { await execFileP('systemctl',['--user',action,'openclaw-business.service'],{timeout:15000}); res.json({ ok:true }); } catch(e) { res.status(500).json({ error:(e.stderr||e.message||String(e)).slice(0,1000) }); } });
+app.post('/api/clients/:slug/pairing/:action', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const action=req.params.action; await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); if(action==='disconnect'){ try { waSockets.get(slug)?.end?.(); } catch {} waSockets.delete(slug); await updateWhatsappAccount(slug, false); await fs.rm(path.join(TENANTS, slug, 'whatsapp-connected'), { force:true }); await fs.rm(path.join(TENANTS, slug, 'qr.txt'), { force:true }); await fs.rm(path.join(TENANTS, slug, 'qr.png'), { force:true }); await fs.rm(path.join(WA_CREDS, slug), { recursive:true, force:true }); await upsertPairingDb(slug, { status:'not_ready', qr:'', qrType:'text', note:'WhatsApp diputuskan dari dashboard.', authDir:path.join(WA_CREDS, slug), disconnectedAt:new Date().toISOString() }); await auditLog(slug, req.authSession.role, 'whatsapp.disconnect'); await restartBusinessGateway(); return res.json({ ok:true, pairing: await tenantPairing(slug) }); } if(action==='refresh'){ const authDir=path.join(WA_CREDS, slug); await upsertPairingDb(slug, { status:'preparing', qr:'', qrType:'text', note:'Membuat QR baru. Tunggu sebentar, dashboard akan update otomatis.', authDir, refreshedAt:new Date().toISOString() }); runWhatsappPairing(slug); await auditLog(slug, req.authSession.role, 'whatsapp.refresh_qr'); return res.json({ ok:true, queued:true, pairing: await tenantPairing(slug) }); } return res.status(400).json({ error:'Action invalid' }); });
+app.get('/api/service/status', requireAdmin, async (req, res) => {
+  const service = await serviceState(BUSINESS_UNIT);
+  let enabled = await serviceEnabledState(BUSINESS_UNIT), recent = '';
+  try { recent = (await execFileP('journalctl', ['--user','-u',BUSINESS_UNIT,'-n','18','--no-pager'], { timeout: 8000 })).stdout.trim(); } catch (e) { recent = (e.stdout || e.stderr || '').trim(); }
+  res.json({ ok:true, service, enabled, unit:BUSINESS_UNIT, recent: recent.split('\n').slice(-10).join('\n') });
+});
+
+app.post('/api/service/:action', requireAdmin, async (req, res) => {
+  const action=req.params.action;
+  if(!['restart','start','stop'].includes(action)) return res.status(400).json({ error:'Action invalid' });
+  const args=['--user', action];
+  if(action==='restart' || action==='stop') args.push('--no-block');
+  args.push(BUSINESS_UNIT);
+  try {
+    await execFileP('systemctl', args, { timeout: action==='start' ? 15000 : 8000 });
+    const service = action==='stop' ? 'stopping' : await serviceState(BUSINESS_UNIT);
+    res.json({ ok:true, action, service, unit:BUSINESS_UNIT });
+  } catch(e) {
+    res.status(500).json({ error:(e.stderr||e.stdout||e.message||String(e)).slice(0,1000) });
+  }
+});
 
 initDb().then(() => app.listen(PORT, '127.0.0.1', () => console.log(`Muy Business Dashboard (Supabase/Postgres): http://127.0.0.1:${PORT}`))).catch(err => { console.error('Dashboard DB init failed:', err); process.exit(1); });
