@@ -1088,3 +1088,74 @@ ul,
   .card:has(#customersList) { padding: 20px !important; box-shadow: 7px 7px 0 var(--line) !important; }
   .customer-toolbar { padding: 18px !important; }
 }
+
+
+/* Knowledge section manager scroll polish: clean internal scrolling, no clipped/weird sidebar edges. */
+.kb-side {
+  overflow: visible !important;
+  max-height: none !important;
+  padding: 0 !important;
+}
+.compact-card {
+  overflow: hidden !important;
+  position: relative;
+}
+.compact-card .section-manager-panel-title {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: linear-gradient(135deg,#fff 0%,#ecfff3 100%);
+  padding-bottom: 14px;
+  margin-bottom: 14px !important;
+  border-bottom: 3px dashed rgba(21,16,25,.18);
+}
+.section-manager {
+  max-height: min(560px, 56vh) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 6px 14px 12px 2px !important;
+  margin-right: -6px;
+  scroll-behavior: smooth;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: var(--purple) #ffffff;
+}
+.section-manager::-webkit-scrollbar {
+  width: 12px;
+}
+.section-manager::-webkit-scrollbar-track {
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  margin: 8px 0;
+}
+.section-manager::-webkit-scrollbar-thumb {
+  background: var(--purple);
+  border: 2px solid var(--line);
+  border-radius: 999px;
+}
+.section-manager::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+.section-manager .section-row {
+  margin: 0 !important;
+  box-shadow: 4px 4px 0 var(--line) !important;
+}
+.section-manager .section-row + .section-row {
+  margin-top: 14px !important;
+}
+.kb-add-custom {
+  background: linear-gradient(180deg,rgba(255,255,255,.92),#fff);
+  position: relative;
+  z-index: 2;
+}
+@media(max-width:1320px){
+  .section-manager { max-height: 620px !important; }
+}
+@media(max-width:620px){
+  .section-manager {
+    max-height: 520px !important;
+    padding-right: 10px !important;
+    margin-right: -4px;
+  }
+}
