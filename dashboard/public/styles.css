@@ -1408,3 +1408,61 @@ ul,
     min-width: 0 !important;
   }
 }
+
+
+/* Customers top metrics to table/card spacing: clear separation and precise KPI breathing room. */
+.kpi-row:has(+ .card #customersList) {
+  gap: 28px !important;
+  margin-bottom: 42px !important;
+  align-items: stretch !important;
+}
+.kpi-row:has(+ .card #customersList) > .kpi {
+  min-height: 158px !important;
+  padding: 26px !important;
+  border-width: 4px !important;
+  border-radius: 26px !important;
+  box-shadow: 9px 9px 0 var(--line) !important;
+}
+.kpi-row:has(+ .card #customersList) > .kpi small {
+  padding-top: 2px;
+  line-height: 1.35;
+}
+.kpi-row + .card:has(#customersList) {
+  margin-top: 0 !important;
+  clear: both;
+}
+.card:has(#customersList) {
+  position: relative;
+  z-index: 1;
+}
+.card:has(#customersList)::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: -24px;
+  height: 3px;
+  border-top: 3px dashed rgba(21,16,25,.22);
+  pointer-events: none;
+}
+@media(max-width:900px){
+  .kpi-row:has(+ .card #customersList) {
+    gap: 24px !important;
+    margin-bottom: 34px !important;
+  }
+}
+@media(max-width:620px){
+  .kpi-row:has(+ .card #customersList) {
+    gap: 20px !important;
+    margin-bottom: 28px !important;
+  }
+  .kpi-row:has(+ .card #customersList) > .kpi {
+    min-height: 132px !important;
+    padding: 20px !important;
+  }
+  .card:has(#customersList)::before {
+    top: -18px;
+    left: 16px;
+    right: 16px;
+  }
+}
