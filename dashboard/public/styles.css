@@ -1577,3 +1577,108 @@ ul,
     min-width: 96px !important;
   }
 }
+
+
+/* Knowledge section manager no-clipping polish: cleaner scroll area, compact cards, no cut-off look. */
+.compact-card {
+  overflow: visible !important;
+  padding-bottom: 30px !important;
+}
+.section-manager {
+  max-height: min(640px, 62vh) !important;
+  padding: 10px 22px 24px 4px !important;
+  margin-right: -2px !important;
+  border-radius: 24px !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.9));
+}
+.section-manager::after {
+  content: "";
+  display: block;
+  height: 18px;
+}
+.section-manager::-webkit-scrollbar {
+  width: 10px !important;
+}
+.section-manager::-webkit-scrollbar-track {
+  margin: 14px 0 24px !important;
+  border-width: 2px !important;
+  background: #fff !important;
+}
+.section-manager::-webkit-scrollbar-thumb {
+  border-width: 2px !important;
+  background: var(--purple) !important;
+}
+.section-manager .section-row {
+  min-height: 184px !important;
+  padding: 24px 26px 26px !important;
+  border-radius: 28px !important;
+  box-shadow: 7px 7px 0 var(--line) !important;
+  margin: 0 0 24px 0 !important;
+  background: linear-gradient(135deg,#fff 0%,#f8fff9 100%) !important;
+  overflow: visible !important;
+}
+.section-manager .section-row + .section-row {
+  margin-top: 0 !important;
+}
+.section-manager .section-row-title {
+  padding-right: 72px !important;
+  font-size: 17px !important;
+  line-height: 1.28 !important;
+  overflow-wrap: anywhere !important;
+}
+.section-manager .section-row-sub {
+  max-width: none !important;
+  padding-right: 20px !important;
+  line-height: 1.65 !important;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  top: 24px !important;
+  right: 26px !important;
+  z-index: 2 !important;
+}
+.section-manager .section-row-actions {
+  margin-top: 20px !important;
+  padding-top: 2px !important;
+  justify-content: center !important;
+  gap: 22px !important;
+}
+.section-manager .section-row-actions button {
+  width: 106px !important;
+  min-width: 106px !important;
+  height: 56px !important;
+  min-height: 56px !important;
+}
+.kb-add-custom {
+  margin-top: 24px !important;
+  padding-top: 24px !important;
+  border-top: 3px dashed rgba(21,16,25,.18) !important;
+}
+@media(max-width:620px){
+  .section-manager {
+    max-height: 560px !important;
+    padding: 8px 14px 22px 2px !important;
+  }
+  .section-manager .section-row {
+    min-height: 180px !important;
+    padding: 22px 20px 24px !important;
+    margin-bottom: 22px !important;
+  }
+  .section-manager .section-row-title {
+    padding-right: 68px !important;
+  }
+  .section-manager .section-row .pill,
+  .section-manager .section-row .tag {
+    top: 20px !important;
+    right: 20px !important;
+  }
+  .section-manager .section-row-actions {
+    gap: 14px !important;
+  }
+  .section-manager .section-row-actions button {
+    width: 96px !important;
+    min-width: 96px !important;
+  }
+}
