@@ -216,4 +216,4 @@ insert into public.dashboard_auth(key, value)
 values ('adminPasswordHash', to_jsonb(encode(digest('admin12345', 'sha256'), 'hex')))
 on conflict (key) do nothing;
 
--- Tidak ada seed client demo. Client dibuat dari dashboard admin agar data produksi tetap bersih.
+-- Tidak ada seed client bawaan. Semua client dan knowledge dibuat dari data real melalui dashboard admin.

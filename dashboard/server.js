@@ -325,163 +325,12 @@ async function buildClientDashboard(slug) {
   await saveDashboardSnapshot(slug, data);
   return data;
 }
-function templateKb(c) { return `# Knowledge Base - ${c.name}
-
-## Identitas Bisnis
-- Nama bisnis: ${c.name}
-- Slug: ${c.slug}
-- Nama owner/admin: ${c.ownerName || c.owner_name || '-'}
-- Nomor WhatsApp bisnis: ${c.whatsapp || '-'}
-- Paket: Muy Business
-- Status: ${c.status || 'draft'}
-- Bahasa utama: Bahasa Indonesia santai, jelas, sopan, tidak kaku.
-
-## Ringkasan Bisnis
-Tuliskan penjelasan singkat bisnis ini dalam 2-5 kalimat.
-Contoh: bisnis menjual apa, untuk siapa, keunggulan utama, area layanan, dan hal yang membedakan dari kompetitor.
-
-## Produk / Jasa Utama
-Gunakan format detail per produk/jasa.
-
-### Produk/Jasa 1
-- Nama:
-- Deskripsi singkat:
-- Cocok untuk:
-- Manfaat utama:
-- Varian / paket:
-- Harga:
-- Durasi pengerjaan / estimasi pengiriman:
-- Stok / ketersediaan:
-- Catatan penting:
-
-### Produk/Jasa 2
-- Nama:
-- Deskripsi singkat:
-- Cocok untuk:
-- Manfaat utama:
-- Varian / paket:
-- Harga:
-- Durasi pengerjaan / estimasi pengiriman:
-- Stok / ketersediaan:
-- Catatan penting:
-
-## Daftar Harga Resmi
-Tulis hanya harga yang valid. Bot tidak boleh mengarang harga jika belum ada di bagian ini.
-
-| Item | Harga | Termasuk | Tidak termasuk | Catatan |
-| --- | --- | --- | --- | --- |
-| Contoh Produk | Rp | | | |
-
-## Promo / Diskon
-- Promo aktif:
-- Masa berlaku promo:
-- Syarat dan ketentuan:
-- Batasan promo:
-Jika tidak ada promo, tulis: Tidak ada promo aktif.
-
-## Cara Order
-Tuliskan alur order yang harus diikuti customer.
-1. Customer pilih produk/jasa.
-2. Bot minta detail yang diperlukan.
-3. Bot jelaskan harga/estimasi berdasarkan knowledge.
-4. Bot arahkan pembayaran atau admin sesuai aturan bisnis.
-5. Bot konfirmasi data order sebelum diproses.
-
-Data yang perlu diminta:
-- Nama customer:
-- Nomor WhatsApp:
-- Produk/jasa yang dipilih:
-- Varian/jumlah:
-- Alamat / detail kebutuhan:
-- Catatan tambahan:
-
-## Pembayaran
-- Metode pembayaran tersedia:
-- Nama rekening / akun:
-- Nomor rekening / tujuan pembayaran:
-- Instruksi pembayaran:
-- Aturan konfirmasi pembayaran:
-- Apakah bot boleh mengirim nomor rekening? Ya/Tidak
-- Jika perlu invoice resmi, arahkan ke admin.
-
-## Pengiriman / Delivery / Aktivasi
-- Area layanan:
-- Metode pengiriman:
-- Biaya pengiriman:
-- Estimasi waktu:
-- Kurir/platform:
-- Aturan resi:
-- Untuk produk digital, jelaskan proses aktivasi/akses.
-
-## Jam Operasional
-- Hari buka:
-- Jam buka:
-- Hari libur:
-- SLA balasan admin:
-- Jika di luar jam operasional, bot jawab sopan dan beri ekspektasi kapan admin membalas.
-
-## Kebijakan Refund / Garansi / Komplain
-- Refund diperbolehkan jika:
-- Refund tidak berlaku jika:
-- Masa garansi:
-- Cara klaim garansi:
-- Komplain berat wajib diarahkan ke admin.
-- Bot tidak boleh menjanjikan refund/garansi di luar aturan ini.
-
-## FAQ Customer
-Tambahkan pertanyaan yang sering ditanyakan.
-
-### Q: Harganya berapa?
-A: Jawab berdasarkan Daftar Harga Resmi. Jika item belum ada, minta admin konfirmasi.
-
-### Q: Cara ordernya gimana?
-A: Jelaskan alur order singkat sesuai bagian Cara Order.
-
-### Q: Bisa nego?
-A: Jelaskan aturan nego jika ada. Jika tidak jelas, arahkan ke admin.
-
-### Q: Ready sekarang?
-A: Jawab berdasarkan stok/ketersediaan. Jika belum ada data stok, jangan mengarang.
-
-## Gaya Bahasa Bot
-- Santai, hangat, sopan, dan to the point.
-- Jangan terlalu formal/corporate.
-- Jangan terlalu panjang kecuali customer meminta detail.
-- Jangan pakai istilah teknis internal.
-- Jangan sebut AI/model/token/OpenClaw/internal system.
-- Jangan mengarang harga, stok, promo, garansi, atau janji pengiriman.
-- Kalau data kurang, tanya satu hal paling penting dulu.
-
-## Contoh Balasan Ideal
-### Tanya harga
-Customer: Kak harganya berapa?
-Bot: Untuk produk yang mana ya? Kalau sebutkan nama produk/paketnya, aku bantu cekkan harganya.
-
-### Cara order
-Customer: Cara ordernya gimana?
-Bot: Bisa. Pilih dulu produk/paket yang kamu mau, lalu kirim detail kebutuhan dan nama penerima. Nanti aku bantu arahkan langkah berikutnya.
-
-### Data belum ada
-Customer: Ada garansi?
-Bot: Untuk garansi, aku perlu cek dulu ke admin karena detail garansinya belum tertulis di data. Mau aku bantu teruskan ke admin?
-
-## Eskalasi ke Admin
-Bot wajib arahkan ke admin untuk:
-- Refund atau pembatalan.
-- Komplain berat.
-- Invoice resmi.
-- Permintaan data pribadi.
-- Negosiasi khusus.
-- Harga/garansi/stok yang belum tertulis.
-- Kasus konflik atau customer marah.
-
-Format eskalasi:
-Baik, untuk bagian ini aku bantu teruskan ke admin supaya jawabannya akurat dan aman ya.
-
-## Catatan Internal Admin
-Tuliskan catatan yang membantu bot memahami bisnis, tetapi jangan isi rahasia sensitif seperti password, OTP, token, atau akses rekening.
-`; }
-
+function emptyKnowledgeBase() { return ''; }
+function isReservedNonProductionClient(slug, name='') {
+  const s = String(slug || '').toLowerCase();
+  const n = String(name || '').toLowerCase();
+  return !s || s === 'demo' || s === 'demo-client' || s.startsWith('audit-') || s.startsWith('final-audit') || s.startsWith('supabase-audit') || /(demo|dummy|sample|contoh|test|audit|fake|lorem)/i.test(n);
+}
 async function backfillSupabaseRuntime() {
   const rows = await query(`select slug from clients order by created_at desc`);
   for (const row of rows.rows) {
@@ -497,13 +346,13 @@ async function migrateLegacyClients() {
   for (const c of legacy.clients || []) {
     const slug = safeSlug(c.slug);
     const name = String(c.name || '');
-    if (!slug || slug === 'demo' || slug === 'demo-client' || slug.startsWith('audit-') || slug.startsWith('final-audit') || /demo|audit/i.test(name)) continue;
+    if (isReservedNonProductionClient(slug, name)) continue;
     await query(`insert into clients(slug,name,owner_name,whatsapp,package,status,notes,dashboard_token_hash,created_at,updated_at,archived_at)
       values($1,$2,$3,$4,$5,$6,$7,$8,coalesce($9::timestamptz,now()),coalesce($10::timestamptz,now()),$11::timestamptz)
       on conflict(slug) do update set name=excluded.name, owner_name=excluded.owner_name, whatsapp=excluded.whatsapp, package=excluded.package, status=excluded.status, notes=excluded.notes, dashboard_token_hash=coalesce(clients.dashboard_token_hash, excluded.dashboard_token_hash), updated_at=now(), archived_at=excluded.archived_at`,
       [slug,c.name,c.ownerName||c.owner_name||'',c.whatsapp||'','muy-business',c.status||'draft',c.notes||'',c.dashboardTokenHash||c.dashboard_token_hash||null,c.createdAt||c.created_at,c.updatedAt||c.updated_at,c.archivedAt||c.archived_at||null]);
     let content = '';
-    try { content = await fs.readFile(tenantFile(slug), 'utf8'); } catch { content = templateKb({ ...c, slug }); }
+    try { content = await fs.readFile(tenantFile(slug), 'utf8'); } catch { content = emptyKnowledgeBase(); }
     await query(`insert into tenant_kb(slug,content) values($1,$2) on conflict(slug) do update set content=case when tenant_kb.content='' then excluded.content else tenant_kb.content end`, [slug, content]);
   }
 }
@@ -567,10 +416,11 @@ app.get('/api/admin/dashboard', requireAdmin, async (_req, res) => {
 });
 app.post('/api/clients', requireAdmin, async (req, res) => {
   const b = req.body || {}; const slug = safeSlug(b.slug || b.name); if (!slug) return res.status(400).json({ error: 'Nama/slug client wajib diisi' });
+  if (isReservedNonProductionClient(slug, b.name || slug)) return res.status(400).json({ error: 'Nama/slug ini ditolak karena terlihat seperti data non-produksi. Pakai data bisnis asli.' });
   const clientPassword = b.clientPassword || crypto.randomBytes(5).toString('hex');
   try {
     const r = await query(`insert into clients(slug,name,owner_name,whatsapp,package,status,notes,dashboard_token_hash) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`, [slug,b.name||slug,b.ownerName||'',b.whatsapp||'','muy-business',b.status||'draft',b.notes||'',sha(clientPassword)]);
-    const content = templateKb({ ...b, slug, name: b.name || slug });
+    const content = emptyKnowledgeBase();
     await query(`insert into tenant_kb(slug,content) values($1,$2)`, [slug, content]);
     await fs.mkdir(path.join(TENANTS, slug), { recursive: true }); await fs.writeFile(tenantFile(slug), content);
     await upsertPairingDb(slug, { status:'not_ready', qr:'', qrType:'text', note:'Client baru dibuat. WhatsApp belum pairing.', authDir:path.join(WA_CREDS, slug) });
@@ -580,6 +430,7 @@ app.post('/api/clients', requireAdmin, async (req, res) => {
 });
 app.patch('/api/clients/:slug', requireAdmin, async (req, res) => {
   const slug = safeSlug(req.params.slug); const b = req.body || {}; const old = await query(`select * from clients where slug=$1`, [slug]); if (!old.rowCount) return res.status(404).json({ error: 'Client tidak ditemukan' });
+  if (isReservedNonProductionClient(slug, b.name || old.rows[0].name)) return res.status(400).json({ error: 'Nama/slug ini ditolak karena terlihat seperti data non-produksi. Pakai data bisnis asli.' });
   const c = old.rows[0]; const passHash = b.clientPassword ? sha(b.clientPassword) : c.dashboard_token_hash;
   const r = await query(`update clients set name=$2, owner_name=$3, whatsapp=$4, package=$5, status=$6, notes=$7, dashboard_token_hash=$8, updated_at=now() where slug=$1 returning *`, [slug,b.name??c.name,b.ownerName??c.owner_name,b.whatsapp??c.whatsapp,'muy-business',b.status??c.status,b.notes??c.notes,passHash]);
   await auditLog(slug, 'admin', 'client.update');
