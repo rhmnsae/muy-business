@@ -1941,3 +1941,13 @@ ul,
     align-self: start !important;
   }
 }
+
+
+/* Disconnect WhatsApp loading label: keep Muy Business readable in black. */
+.loading-disconnect .loading-kicker,
+.loading-danger .loading-kicker {
+  color: var(--ink) !important;
+  background: #fff !important;
+  border-color: var(--line) !important;
+  text-shadow: none !important;
+}
