@@ -2257,3 +2257,84 @@ body.sidebar-collapsed .nav-label {
     justify-content: flex-start !important;
   }
 }
+
+
+/* Collapsed sidebar initials: short labels only, no vertical long text. */
+body.sidebar-collapsed .logo {
+  min-height: 64px !important;
+  width: 64px !important;
+  margin-inline: auto !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+body.sidebar-collapsed .logo-text {
+  display: none !important;
+  writing-mode: initial !important;
+  transform: none !important;
+}
+body.sidebar-collapsed .logo::after {
+  content: "MB";
+  width: 42px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid var(--line);
+  border-radius: 14px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: -.8px;
+}
+body.sidebar-collapsed .nav button {
+  position: relative !important;
+  width: 64px !important;
+  min-width: 64px !important;
+  height: 58px !important;
+  min-height: 58px !important;
+  padding: 0 !important;
+  margin-inline: auto !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+body.sidebar-collapsed .nav-label {
+  display: none !important;
+  writing-mode: initial !important;
+  transform: none !important;
+}
+body.sidebar-collapsed .nav button::after {
+  content: attr(data-short);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 34px;
+  border: 3px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 1000;
+  letter-spacing: -.8px;
+  box-shadow: 3px 3px 0 var(--line);
+}
+body.sidebar-collapsed .nav button.active::after {
+  background: var(--yellow);
+}
+@media(max-width:900px){
+  body.sidebar-collapsed .logo {
+    width: auto !important;
+    min-height: 76px !important;
+    padding: 14px 15px !important;
+    justify-content: flex-start !important;
+  }
+  body.sidebar-collapsed .logo::after { display:none !important; }
+  body.sidebar-collapsed .logo-text,
+  body.sidebar-collapsed .nav-label {
+    display: block !important;
+  }
+  body.sidebar-collapsed .nav button::after { display:none !important; }
+}
