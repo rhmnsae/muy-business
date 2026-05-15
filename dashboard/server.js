@@ -30,7 +30,26 @@ const pool = DATABASE_URL ? new Pool({
 const waSockets = new Map();
 
 app.use(express.json({ limit: '2mb' }));
-app.use(express.static(path.join(ROOT, 'dashboard', 'public')));
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html') || req.path.endsWith('.js') || req.path.endsWith('.css')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+  }
+  next();
+});
+app.use(express.static(path.join(ROOT, 'dashboard', 'public'), {
+  etag: false,
+  lastModified: false,
+  maxAge: 0,
+  setHeaders(res) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.set('Surrogate-Control', 'no-store');
+  }
+}));
 
 function safeSlug(input) { return String(input || '').toLowerCase().trim().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 64); }
 function sha(value) { return crypto.createHash('sha256').update(String(value)).digest('hex'); }
