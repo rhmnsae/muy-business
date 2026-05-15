@@ -68,7 +68,8 @@ async function readWhatsappIdentity(slug) {
   const credsFile = path.join(WA_CREDS, slug, 'creds.json');
   const creds = await readJson(credsFile, null);
   const me = creds?.me || null;
-  return { paired: !!me, name: me?.name || '', number: jidToPhone(me?.id), jid: me?.id || '', lid: me?.lid || '', platform: creds?.platform || '', authDir: path.join(WA_CREDS, slug) };
+  const paired = !!me && creds?.registered !== false;
+  return { paired, registered: creds?.registered === true, name: me?.name || '', number: jidToPhone(me?.id), jid: me?.id || '', lid: me?.lid || '', platform: creds?.platform || '', authDir: path.join(WA_CREDS, slug) };
 }
 async function sessionStore() { return readJson(path.join(ROOT, '.openclaw', 'agents', 'main', 'sessions', 'sessions.json'), {}); }
 async function readJsonl(file) { try { return (await fs.readFile(file, 'utf8')).split('\n').filter(Boolean).map(line => { try { return JSON.parse(line); } catch { return null; } }).filter(Boolean); } catch { return []; } }
@@ -157,9 +158,9 @@ async function tenantPairing(slug) {
     const qrFiles = ['qr.png','qr.svg','qr.txt','pairing.txt'];
     for (const f of qrFiles) { try { const file = path.join(dir, f); if (!fss.existsSync(file)) continue; if (f.endsWith('.png')) { qr = 'data:image/png;base64,' + await fs.readFile(file, 'base64'); qrType = 'image'; } else { qr = await fs.readFile(file, 'utf8'); qrType = f.endsWith('.svg') ? 'svg' : 'text'; } break; } catch {} }
   }
-  const credsConnected = fss.existsSync(path.join(authDir, 'creds.json'));
+  const identity = await readWhatsappIdentity(slug);
   const markerConnected = fss.existsSync(path.join(dir, 'whatsapp-connected'));
-  const connected = credsConnected || markerConnected || db?.status === 'connected';
+  const connected = identity.paired && markerConnected;
   const status = connected ? 'connected' : (qr ? 'scan_required' : 'not_ready');
   const note = connected ? 'WhatsApp sudah memiliki sesi tertaut. Jika belum membalas, restart service bot.' : (qr ? 'Scan QR dari WhatsApp perangkat client.' : 'Klik Refresh QR untuk membuat QR pairing WhatsApp.');
   const result = { slug, status, qr: connected ? '' : qr, qrType, updatedAt: new Date().toISOString(), authDir, note };
@@ -194,7 +195,7 @@ async function startWhatsappPairing(slug) {
     if (u.connection === 'close') {
       const code = u.lastDisconnect?.error?.output?.statusCode;
       if (code === DisconnectReason.loggedOut) { await fs.rm(authDir, { recursive:true, force:true }); await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true }); }
-      else if (fss.existsSync(path.join(authDir, 'creds.json'))) { await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString()); await fs.rm(path.join(dir, 'qr.txt'), { force:true }); await fs.rm(path.join(dir, 'qr.png'), { force:true }); await updateWhatsappAccount(slug, true); try { sock.end(); } catch {} waSockets.delete(slug); await upsertPairingDb(slug, { status:'connected', qr:'', qrType:'text', note:'WhatsApp sudah terhubung.', authDir, connectedAt:new Date().toISOString() }); await restartBusinessGateway(); }
+      else { const id = await readWhatsappIdentity(slug); if (id.paired) { await fs.writeFile(path.join(dir, 'whatsapp-connected'), new Date().toISOString()); await fs.rm(path.join(dir, 'qr.txt'), { force:true }); await fs.rm(path.join(dir, 'qr.png'), { force:true }); await updateWhatsappAccount(slug, true); try { sock.end(); } catch {} waSockets.delete(slug); await upsertPairingDb(slug, { status:'connected', qr:'', qrType:'text', note:'WhatsApp sudah terhubung.', authDir, connectedAt:new Date().toISOString() }); await restartBusinessGateway(); } else { await fs.rm(path.join(dir, 'whatsapp-connected'), { force:true }); await upsertPairingDb(slug, { status:'scan_required', note:'QR belum berhasil login. Scan ulang dengan koneksi WhatsApp yang stabil.', authDir }); } }
     }
   });
   await new Promise(r => setTimeout(r, 2500));
