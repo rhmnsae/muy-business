@@ -2195,3 +2195,65 @@ body.sidebar-collapsed .nav button {
 body.sidebar-collapsed .nav {
   justify-items: center !important;
 }
+
+
+/* Sidebar no-icon cleanup: text-only navigation and cleaner logo. */
+.logo {
+  justify-content: flex-start !important;
+  padding-left: 22px !important;
+}
+.logo-mark,
+.nav-icon {
+  display: none !important;
+}
+.nav button {
+  gap: 0 !important;
+  padding-left: 24px !important;
+  padding-right: 24px !important;
+}
+.nav-label {
+  display: block !important;
+  width: 100% !important;
+}
+body.sidebar-collapsed .logo {
+  justify-content: center !important;
+  padding: 10px !important;
+}
+body.sidebar-collapsed .logo-text {
+  display: block !important;
+  writing-mode: vertical-rl !important;
+  transform: rotate(180deg) !important;
+  font-size: 13px !important;
+  letter-spacing: .04em !important;
+  max-height: 120px !important;
+}
+body.sidebar-collapsed .nav button {
+  width: 64px !important;
+  min-width: 64px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+body.sidebar-collapsed .nav-label {
+  display: block !important;
+  writing-mode: vertical-rl !important;
+  transform: rotate(180deg) !important;
+  font-size: 11px !important;
+  letter-spacing: .03em !important;
+  text-align: center !important;
+  width: auto !important;
+  max-height: 94px !important;
+}
+@media(max-width:900px){
+  body.sidebar-collapsed .logo-text,
+  body.sidebar-collapsed .nav-label {
+    writing-mode: initial !important;
+    transform: none !important;
+    font-size: inherit !important;
+  }
+  body.sidebar-collapsed .nav button {
+    width: auto !important;
+    min-width: 164px !important;
+    padding: 0 20px !important;
+    justify-content: flex-start !important;
+  }
+}
