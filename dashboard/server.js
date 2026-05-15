@@ -294,7 +294,7 @@ async function initDb() {
   const defaultAdminPasswordHash = legacy?.adminPasswordHash || sha(process.env.MUY_DASHBOARD_ADMIN_PASSWORD || 'admin12345');
   await query(`insert into dashboard_auth(key,value) values('adminUsernameHash',$1) on conflict (key) do nothing`, [JSON.stringify(sha(defaultAdminUsername))]);
   await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict (key) do nothing`, [JSON.stringify(defaultAdminPasswordHash)]);
-  await migrateLegacyClients();
+  if (process.env.MUY_MIGRATE_LEGACY_CLIENTS === '1') await migrateLegacyClients();
   await backfillSupabaseRuntime();
 }
 
@@ -495,13 +495,16 @@ async function backfillSupabaseRuntime() {
 async function migrateLegacyClients() {
   const legacy = await readJson(LEGACY_CLIENTS, { clients: [] });
   for (const c of legacy.clients || []) {
+    const slug = safeSlug(c.slug);
+    const name = String(c.name || '');
+    if (!slug || slug === 'demo' || slug === 'demo-client' || slug.startsWith('audit-') || slug.startsWith('final-audit') || /demo|audit/i.test(name)) continue;
     await query(`insert into clients(slug,name,owner_name,whatsapp,package,status,notes,dashboard_token_hash,created_at,updated_at,archived_at)
       values($1,$2,$3,$4,$5,$6,$7,$8,coalesce($9::timestamptz,now()),coalesce($10::timestamptz,now()),$11::timestamptz)
       on conflict(slug) do update set name=excluded.name, owner_name=excluded.owner_name, whatsapp=excluded.whatsapp, package=excluded.package, status=excluded.status, notes=excluded.notes, dashboard_token_hash=coalesce(clients.dashboard_token_hash, excluded.dashboard_token_hash), updated_at=now(), archived_at=excluded.archived_at`,
-      [c.slug,c.name,c.ownerName||c.owner_name||'',c.whatsapp||'','muy-business',c.status||'draft',c.notes||'',c.dashboardTokenHash||c.dashboard_token_hash||null,c.createdAt||c.created_at,c.updatedAt||c.updated_at,c.archivedAt||c.archived_at||null]);
+      [slug,c.name,c.ownerName||c.owner_name||'',c.whatsapp||'','muy-business',c.status||'draft',c.notes||'',c.dashboardTokenHash||c.dashboard_token_hash||null,c.createdAt||c.created_at,c.updatedAt||c.updated_at,c.archivedAt||c.archived_at||null]);
     let content = '';
-    try { content = await fs.readFile(tenantFile(c.slug), 'utf8'); } catch { content = templateKb(c); }
-    await query(`insert into tenant_kb(slug,content) values($1,$2) on conflict(slug) do update set content=case when tenant_kb.content='' then excluded.content else tenant_kb.content end`, [c.slug, content]);
+    try { content = await fs.readFile(tenantFile(slug), 'utf8'); } catch { content = templateKb({ ...c, slug }); }
+    await query(`insert into tenant_kb(slug,content) values($1,$2) on conflict(slug) do update set content=case when tenant_kb.content='' then excluded.content else tenant_kb.content end`, [slug, content]);
   }
 }
 

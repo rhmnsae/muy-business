@@ -216,18 +216,4 @@ insert into public.dashboard_auth(key, value)
 values ('adminPasswordHash', to_jsonb(encode(digest('admin12345', 'sha256'), 'hex')))
 on conflict (key) do nothing;
 
--- Seed demo client biar dashboard tidak kosong. Boleh hapus nanti.
-insert into public.clients(slug, name, owner_name, whatsapp, package, status, notes)
-values ('demo', 'Demo Client', 'Owner Demo', '', 'muy-business', 'draft', 'Contoh client awal Muy Business')
-on conflict (slug) do nothing;
-
-insert into public.tenant_kb(slug, content)
-values ('demo', '# Knowledge Base - Demo Client
-
-Isi produk, harga, cara order, pembayaran, jam operasional, refund, FAQ, dan handoff admin di sini.')
-on conflict (slug) do nothing;
-
-insert into public.client_runtime_stats(slug) values ('demo') on conflict (slug) do nothing;
-insert into public.client_whatsapp_pairing(slug, status, note)
-values ('demo', 'not_ready', 'Klik Refresh QR untuk membuat QR pairing WhatsApp.')
-on conflict (slug) do nothing;
+-- Tidak ada seed client demo. Client dibuat dari dashboard admin agar data produksi tetap bersih.
