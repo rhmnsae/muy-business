@@ -1,14 +1,38 @@
-# OpenClaw Business Instance
+# Muy Business
 
-Instance ini dibuat terpisah dari OpenClaw inti.
+Dashboard operasional untuk bot Telegram `@businessmuy_bot` dan tenant WhatsApp client.
 
-- Home: `~/openclaw-business`
-- State/config: `~/openclaw-business/.openclaw`
-- Workspace: `~/openclaw-business/.openclaw/workspace`
-- Port gateway: `18790`
-- Start manual: `~/openclaw-business/bin/start-openclaw-business.sh`
+## Isi Project
 
-Next setup:
-1. Jalankan setup/config channel bisnis dengan `OPENCLAW_HOME=~/openclaw-business`.
-2. Pakai token/akun bot pelanggan, jangan pakai token/akun pribadi.
-3. Tambahkan data tenant di `workspace/tenants/<nama>/`.
+- `dashboard/server.js` - backend dashboard Express + PostgreSQL/Supabase.
+- `dashboard/public/index.html` - frontend dashboard admin/client.
+- `dashboard/package.json` - dependency dashboard.
+- `bin/start-openclaw-business.sh` - helper start service.
+- `tools/muy-db-proxy.js` - helper/proxy database.
+- `supabase-schema.sql` - SQL lengkap untuk Supabase Cloud SQL Editor.
+
+## Setup Supabase Cloud
+
+1. Buat project Supabase Cloud.
+2. Buka SQL Editor.
+3. Paste semua isi `supabase-schema.sql`.
+4. Run.
+5. Ambil database connection string PostgreSQL dari Supabase.
+6. Set env backend:
+
+```bash
+export MUY_DATABASE_URL="postgresql://..."
+export MUY_DASHBOARD_PORT=18880
+```
+
+## Login Awal Dashboard
+
+- Username: `admin`
+- Password: `admin12345`
+
+Setelah login, langsung ganti dari menu Settings.
+Username dan password admin/client tidak disimpan di frontend. Database menyimpan hash dan session token.
+
+## Catatan Keamanan
+
+Jangan commit file `.env`, credential OpenClaw, session WhatsApp, token, database dump pribadi, atau file runtime.

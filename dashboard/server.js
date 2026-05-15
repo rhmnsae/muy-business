@@ -205,14 +205,18 @@ async function initDb() {
   )`);
   await query(`create table if not exists dashboard_auth (
     key text primary key,
-    value jsonb not null
+    value jsonb not null,
+    updated_at timestamptz default now()
   )`);
+  await query(`alter table dashboard_auth add column if not exists updated_at timestamptz default now()`);
   await query(`create table if not exists dashboard_sessions (
     token text primary key,
     role text not null,
     slug text,
-    created_at timestamptz default now()
+    created_at timestamptz default now(),
+    expires_at timestamptz default (now() + interval '12 hours')
   )`);
+  await query(`alter table dashboard_sessions add column if not exists expires_at timestamptz default (now() + interval '12 hours')`);
   await query(`create table if not exists client_runtime_stats (
     slug text primary key references clients(slug) on delete cascade,
     pairing_status text default 'not_ready',
@@ -280,12 +284,11 @@ async function initDb() {
     created_at timestamptz default now()
   )`);
   await query(`update clients set package='muy-business' where package is distinct from 'muy-business'`);
-  const authRows = await query(`select value from dashboard_auth where key='adminPasswordHash'`);
-  if (!authRows.rowCount) {
-    let legacy = await readJson(AUTH, null);
-    const hash = legacy?.adminPasswordHash || sha(process.env.MUY_DASHBOARD_ADMIN_PASSWORD || 'admin12345');
-    await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict (key) do nothing`, [JSON.stringify(hash)]);
-  }
+  const legacy = await readJson(AUTH, null);
+  const defaultAdminUsername = process.env.MUY_DASHBOARD_ADMIN_USERNAME || legacy?.adminUsername || 'admin';
+  const defaultAdminPasswordHash = legacy?.adminPasswordHash || sha(process.env.MUY_DASHBOARD_ADMIN_PASSWORD || 'admin12345');
+  await query(`insert into dashboard_auth(key,value) values('adminUsernameHash',$1) on conflict (key) do nothing`, [JSON.stringify(sha(defaultAdminUsername))]);
+  await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict (key) do nothing`, [JSON.stringify(defaultAdminPasswordHash)]);
   await migrateLegacyClients();
   await backfillSupabaseRuntime();
 }
@@ -497,22 +500,26 @@ async function migrateLegacyClients() {
   }
 }
 
-async function requireAdmin(req, res, next) { try { const t = bearer(req); const r = await query(`select role from dashboard_sessions where token=$1`, [t]); if (!r.rowCount || r.rows[0].role !== 'admin') return res.status(401).json({ error: 'Unauthorized' }); next(); } catch(e) { res.status(500).json({ error: e.message }); } }
-async function requireClient(req, res, next) { try { const t = bearer(req); const r = await query(`select role, slug from dashboard_sessions where token=$1`, [t]); if (!r.rowCount || !['admin','client'].includes(r.rows[0].role)) return res.status(401).json({ error: 'Unauthorized' }); req.authSession = r.rows[0]; next(); } catch(e) { res.status(500).json({ error: e.message }); } }
+async function requireAdmin(req, res, next) { try { const t = bearer(req); await query(`delete from dashboard_sessions where expires_at is not null and expires_at < now()`); const r = await query(`select role from dashboard_sessions where token=$1 and (expires_at is null or expires_at > now())`, [t]); if (!r.rowCount || r.rows[0].role !== 'admin') return res.status(401).json({ error: 'Unauthorized' }); next(); } catch(e) { res.status(500).json({ error: e.message }); } }
+async function requireClient(req, res, next) { try { const t = bearer(req); await query(`delete from dashboard_sessions where expires_at is not null and expires_at < now()`); const r = await query(`select role, slug from dashboard_sessions where token=$1 and (expires_at is null or expires_at > now())`, [t]); if (!r.rowCount || !['admin','client'].includes(r.rows[0].role)) return res.status(401).json({ error: 'Unauthorized' }); req.authSession = r.rows[0]; next(); } catch(e) { res.status(500).json({ error: e.message }); } }
 
 app.post('/api/auth/admin/login', async (req, res) => {
-  const r = await query(`select value from dashboard_auth where key='adminPasswordHash'`);
-  const hash = r.rows[0]?.value;
-  if (sha(req.body?.password || '') !== hash) return res.status(401).json({ error: 'Password salah' });
-  const t = token(); await query(`insert into dashboard_sessions(token, role) values($1,'admin')`, [t]);
+  const username = String(req.body?.username || '').trim();
+  const password = String(req.body?.password || '');
+  const r = await query(`select key, value from dashboard_auth where key in ('adminUsernameHash','adminPasswordHash')`);
+  const auth = Object.fromEntries(r.rows.map(x => [x.key, x.value]));
+  if (sha(username) !== auth.adminUsernameHash || sha(password) !== auth.adminPasswordHash) return res.status(401).json({ error: 'Username atau password salah' });
+  const t = token(); await query(`insert into dashboard_sessions(token, role, expires_at) values($1,'admin', now() + interval '12 hours')`, [t]);
   res.json({ ok: true, token: t, role: 'admin' });
 });
 app.post('/api/auth/admin/password', requireAdmin, async (req, res) => {
   const current = String(req.body?.currentPassword || ''); const next = String(req.body?.newPassword || '');
+  const username = String(req.body?.username || '').trim();
   if (next.length < 10) return res.status(400).json({ error: 'Password baru minimal 10 karakter' });
   const r = await query(`select value from dashboard_auth where key='adminPasswordHash'`);
   if (sha(current) !== r.rows[0]?.value) return res.status(401).json({ error: 'Password lama salah' });
-  await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict(key) do update set value=excluded.value`, [JSON.stringify(sha(next))]);
+  if (username) await query(`insert into dashboard_auth(key,value,updated_at) values('adminUsernameHash',$1,now()) on conflict(key) do update set value=excluded.value, updated_at=now()`, [JSON.stringify(sha(username))]);
+  await query(`insert into dashboard_auth(key,value,updated_at) values('adminPasswordHash',$1,now()) on conflict(key) do update set value=excluded.value, updated_at=now()`, [JSON.stringify(sha(next))]);
   await query(`delete from dashboard_sessions`);
   res.json({ ok: true });
 });
@@ -520,7 +527,7 @@ app.post('/api/auth/client/login', async (req, res) => {
   const slug = safeSlug(req.body?.slug); const pass = String(req.body?.password || '');
   const r = await query(`select slug, dashboard_token_hash from clients where slug=$1`, [slug]);
   if (!r.rowCount || !r.rows[0].dashboard_token_hash || r.rows[0].dashboard_token_hash !== sha(pass)) return res.status(401).json({ error: 'Login client salah' });
-  const t = token(); await query(`insert into dashboard_sessions(token,role,slug) values($1,'client',$2)`, [t, slug]);
+  const t = token(); await query(`insert into dashboard_sessions(token,role,slug,expires_at) values($1,'client',$2, now() + interval '12 hours')`, [t, slug]);
   res.json({ ok: true, token: t, role: 'client', slug });
 });
 
