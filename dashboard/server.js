@@ -21,7 +21,12 @@ const OPENCLAW_CONFIG = path.join(ROOT, '.openclaw', 'openclaw.json');
 const WA_CREDS = path.join(ROOT, '.openclaw', 'credentials', 'whatsapp');
 const SINGLE_PACKAGE = 'muy-business';
 const DATABASE_URL = process.env.MUY_DATABASE_URL;
-const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
+const pool = DATABASE_URL ? new Pool({
+  connectionString: DATABASE_URL,
+  ssl: DATABASE_URL.includes('supabase.com') || DATABASE_URL.includes('pooler.supabase.com')
+    ? { rejectUnauthorized: false }
+    : undefined
+}) : null;
 const waSockets = new Map();
 
 app.use(express.json({ limit: '2mb' }));
