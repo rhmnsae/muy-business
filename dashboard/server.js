@@ -206,6 +206,61 @@ async function telegramBotState() { let active = await serviceState('openclaw-bu
 
 async function query(sql, params=[]) { if (!pool) throw new Error('Database belum dikonfigurasi'); return pool.query(sql, params); }
 
+const KB_DEFAULT_SECTIONS = [
+  ['Identitas Bisnis', 'Nama bisnis, owner/admin, kontak resmi, alamat/area layanan, dan kanal komunikasi.'],
+  ['Ringkasan Bisnis', 'Jelaskan bisnis secara singkat: bidang usaha, target customer, keunggulan utama, dan cara bot harus membantu.'],
+  ['Produk / Jasa Utama', 'Daftar produk/jasa utama, varian, manfaat, detail layanan, dan batasan yang perlu diketahui customer.'],
+  ['Daftar Harga Resmi', 'Isi harga resmi, paket, biaya tambahan, minimal order, dan aturan perubahan harga. Jangan biarkan bot mengarang harga.'],
+  ['Promo / Diskon', 'Isi promo aktif, syarat promo, masa berlaku, atau tulis tidak ada promo jika memang belum ada.'],
+  ['Cara Order', 'Alur order dari awal sampai selesai: data yang harus dikirim customer, format order, dan langkah admin.'],
+  ['Pembayaran', 'Metode pembayaran resmi seperti transfer, QRIS, rekening, e-wallet, DP, pelunasan, dan aturan konfirmasi.'],
+  ['Pengiriman / Delivery / Aktivasi', 'Aturan pengiriman, ongkir, estimasi proses, aktivasi produk digital, atau area layanan.'],
+  ['Jam Operasional', 'Jam buka, jam admin membalas, hari libur, dan aturan pesan di luar jam operasional.'],
+  ['Kebijakan Refund / Garansi / Komplain', 'Aturan refund, garansi, retur, komplain, syarat klaim, dan batas tanggung jawab.'],
+  ['FAQ Customer', 'Tambahkan minimal 5 tanya-jawab customer yang sering muncul agar bot menjawab konsisten.'],
+  ['Gaya Bahasa Bot', 'Gaya bahasa wajib: santai, ramah, singkat, natural, tidak corporate, dan tetap sopan.'],
+  ['Standar Balasan Ideal', 'Contoh format balasan ideal untuk tanya harga, order, pembayaran, stok, komplain, dan follow up.'],
+  ['Eskalasi ke Admin', 'Kapan bot harus meneruskan ke admin: harga tidak jelas, invoice, refund, konflik, data sensitif, atau komplain berat.'],
+  ['Catatan Internal Admin', 'Catatan aman untuk admin/operator. Jangan isi password, OTP, token, atau rahasia sensitif.'],
+  ['Batasan Bot', 'Bot tidak boleh mengarang harga, stok, promo, rekening, garansi, invoice, atau janji pengiriman.'],
+  ['Lead Qualification', 'Pertanyaan untuk mengenali kebutuhan customer, budget, lokasi, deadline, dan prioritas.'],
+  ['Follow Up', 'Aturan follow up customer: kapan follow up, kalimat yang aman, dan batas agar tidak spam.'],
+  ['Handoff Admin', 'Kalimat handoff: Baik kak, untuk bagian ini aku bantu teruskan ke admin supaya jawabannya akurat dan aman ya.'],
+  ['Data Order', 'Format data order: nama, nomor WA, produk/paket, jumlah, alamat/email, metode pembayaran, dan catatan.'],
+  ['Troubleshooting', 'Solusi masalah umum, langkah cek awal, dan kapan harus eskalasi ke admin.']
+];
+function defaultKnowledgeBase(client={}) {
+  const name = String(client.name || client.slug || 'Nama Bisnis').trim();
+  const whatsapp = String(client.whatsapp || '').trim() || 'Belum diisi';
+  return `# Knowledge Base ${name}
+
+> Template awal ini otomatis dibuat dan tersimpan di database. Lengkapi setiap section dengan data bisnis asli sebelum bot live.
+
+${KB_DEFAULT_SECTIONS.map(([section, help]) => `## ${section}\n${help}\n\nStatus data: Belum dilengkapi.\nWhatsApp bisnis: ${whatsapp}.`).join('\n\n')}
+`;
+}
+function isEmptyKnowledge(content) {
+  return !String(content || '').trim();
+}
+function hasKnowledgeScaffold(content) {
+  const t = String(content || '').toLowerCase();
+  return t.includes('## identitas bisnis') && t.includes('## daftar harga resmi') && t.includes('## pembayaran') && t.includes('## handoff admin');
+}
+function mergeExistingKnowledgeWithTemplate(existing, client={}) {
+  const current = String(existing || '').trim();
+  const template = defaultKnowledgeBase(client).trim();
+  if (!current) return template + '\n';
+  return `${template}\n\n## Data Lama yang Sudah Pernah Tersimpan\n${current}\n`;
+}
+async function ensureKnowledgeBase(slug, client={}) {
+  const existing = await query(`select content from tenant_kb where slug=$1`, [slug]);
+  if (existing.rowCount && hasKnowledgeScaffold(existing.rows[0].content)) return existing.rows[0].content;
+  const content = mergeExistingKnowledgeWithTemplate(existing.rows[0]?.content, { slug, ...client });
+  await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [slug, content]);
+  try { await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); await fs.writeFile(tenantFile(slug), content); } catch {}
+  return content;
+}
+
 async function initDb() {
   await fs.mkdir(TENANTS, { recursive: true });
   if (!pool) throw new Error('MUY_DATABASE_URL belum diset');
@@ -313,6 +368,7 @@ async function initDb() {
   const defaultAdminPasswordHash = legacy?.adminPasswordHash || sha(process.env.MUY_DASHBOARD_ADMIN_PASSWORD || 'admin12345');
   await query(`insert into dashboard_auth(key,value) values('adminUsernameHash',$1) on conflict (key) do nothing`, [JSON.stringify(sha(defaultAdminUsername))]);
   await query(`insert into dashboard_auth(key,value) values('adminPasswordHash',$1) on conflict (key) do nothing`, [JSON.stringify(defaultAdminPasswordHash)]);
+  await query(`insert into tenant_kb(slug,content,updated_at) select c.slug, $1 || c.name || $2 || coalesce(nullif(c.whatsapp,''),'Belum diisi') || $3, now() from clients c left join tenant_kb k on k.slug=c.slug where k.slug is null or btrim(k.content)=''`, [`# Knowledge Base `, `\n\n> Template awal ini otomatis dibuat dan tersimpan di database. Lengkapi setiap section dengan data bisnis asli sebelum bot live.\n\n${KB_DEFAULT_SECTIONS.map(([section, help]) => `## ${section}\n${help}\n\nStatus data: Belum dilengkapi.\nWhatsApp bisnis: `).join('\n\n')}`, `.\n`]);
   if (process.env.MUY_MIGRATE_LEGACY_CLIENTS === '1') await migrateLegacyClients();
   await backfillSupabaseRuntime();
 }
@@ -337,14 +393,14 @@ async function syncClientRuntime(slug, payload) {
 }
 async function buildClientDashboard(slug) {
   const c=await query(`select * from clients where slug=$1`, [slug]); if(!c.rowCount) return null;
-  let kb=''; try { const k=await query(`select content from tenant_kb where slug=$1`, [slug]); kb=k.rows[0]?.content||''; } catch {}
+  let kb=''; try { kb = await ensureKnowledgeBase(slug, sanitizeClient(c.rows[0])); } catch {}
   const [pairing, identity, stats, diagnostics] = await Promise.all([tenantPairing(slug), readWhatsappIdentity(slug), tenantStats(slug), whatsappDiagnostics(slug)]);
   const kbScore = await syncClientRuntime(slug, { pairing, identity, stats, diagnostics, kb });
   const data = { ok:true, client:sanitizeClient(c.rows[0]), pairing, identity, stats, diagnostics, kbScore };
   await saveDashboardSnapshot(slug, data);
   return data;
 }
-function emptyKnowledgeBase() { return ''; }
+function emptyKnowledgeBase(client={}) { return defaultKnowledgeBase(client); }
 function isReservedNonProductionClient(slug, name='') {
   const s = String(slug || '').toLowerCase();
   const n = String(name || '').toLowerCase();
@@ -421,7 +477,7 @@ app.get('/api/admin/dashboard', requireAdmin, async (_req, res) => {
   const items = [];
   for (const row of rows.rows) {
     const client = sanitizeClient(row); const slug = client.slug;
-    let kb = ''; try { const k = await query(`select content from tenant_kb where slug=$1`, [slug]); kb = k.rows[0]?.content || ''; } catch {}
+    let kb = ''; try { kb = await ensureKnowledgeBase(slug, client); } catch {}
     const [pairing, identity, stats, diagnostics] = await Promise.all([tenantPairing(slug), readWhatsappIdentity(slug), tenantStats(slug), whatsappDiagnostics(slug)]);
     const kbScore = await syncClientRuntime(slug, { pairing, identity, stats, diagnostics, kb });
     items.push({ client, pairing, identity, stats, diagnostics, kbScore });
@@ -439,7 +495,7 @@ app.post('/api/clients', requireAdmin, async (req, res) => {
   const clientPassword = b.clientPassword || crypto.randomBytes(5).toString('hex');
   try {
     const r = await query(`insert into clients(slug,name,owner_name,whatsapp,package,status,notes,dashboard_token_hash) values($1,$2,$3,$4,$5,$6,$7,$8) returning *`, [slug,b.name||slug,b.ownerName||'',b.whatsapp||'','muy-business',b.status||'draft',b.notes||'',sha(clientPassword)]);
-    const content = emptyKnowledgeBase();
+    const content = emptyKnowledgeBase({ slug, name:b.name||slug, whatsapp:b.whatsapp||'' });
     await query(`insert into tenant_kb(slug,content) values($1,$2)`, [slug, content]);
     await fs.mkdir(path.join(TENANTS, slug), { recursive: true }); await fs.writeFile(tenantFile(slug), content);
     await upsertPairingDb(slug, { status:'not_ready', qr:'', qrType:'text', note:'Client baru dibuat. WhatsApp belum pairing.', authDir:path.join(WA_CREDS, slug) });
@@ -456,8 +512,8 @@ app.patch('/api/clients/:slug', requireAdmin, async (req, res) => {
   res.json({ ok: true, client: sanitizeClient(r.rows[0]) });
 });
 app.delete('/api/clients/:slug', requireAdmin, async (req, res) => { const slug=safeSlug(req.params.slug); const r=await query(`update clients set status='archived', archived_at=now(), updated_at=now() where slug=$1 returning *`, [slug]); if(!r.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); await auditLog(slug, 'admin', 'client.archive'); res.json({ ok:true, client:sanitizeClient(r.rows[0]) }); });
-app.get('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const r=await query(`select content from tenant_kb where slug=$1`, [slug]); if(!r.rowCount) return res.status(404).json({ error:'Knowledge base tidak ditemukan' }); res.json({ slug, content:r.rows[0].content }); });
-app.put('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const content=String(req.body?.content||''); await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [slug,content]); await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); await fs.writeFile(tenantFile(slug), content); await auditLog(slug, req.authSession.role, 'knowledge.save', { chars: content.length }); res.json({ ok:true }); });
+app.get('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const c=await query(`select * from clients where slug=$1`, [slug]); if(!c.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); const content=await ensureKnowledgeBase(slug, sanitizeClient(c.rows[0])); res.json({ slug, content, score: kbQualityScore(content) }); });
+app.put('/api/clients/:slug/kb', requireClient, async (req, res) => { const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const content=String(req.body?.content||''); await query(`insert into tenant_kb(slug,content,updated_at) values($1,$2,now()) on conflict(slug) do update set content=excluded.content, updated_at=now()`, [slug,content]); await fs.mkdir(path.join(TENANTS, slug), { recursive:true }); await fs.writeFile(tenantFile(slug), content); const kbScore=kbQualityScore(content); await query(`insert into client_runtime_stats(slug,kb_score,updated_at) values($1,$2,now()) on conflict(slug) do update set kb_score=excluded.kb_score, updated_at=now()`, [slug,kbScore]); await auditLog(slug, req.authSession.role, 'knowledge.save', { chars: content.length, kbScore }); res.json({ ok:true, score:kbScore }); });
 app.get('/api/client/me', requireClient, async (req, res) => { const slug=req.authSession.role==='admin'?safeSlug(req.query.slug):req.authSession.slug; const r=await query(`select * from clients where slug=$1`, [slug]); if(!r.rowCount) return res.status(404).json({ error:'Client tidak ditemukan' }); res.json({ client:sanitizeClient(r.rows[0]) }); });
 app.get('/api/clients/:slug/pairing', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); res.json(await tenantPairing(slug)); });
 app.get('/api/clients/:slug/dashboard', requireClient, async (req,res)=>{ const slug=safeSlug(req.params.slug); if(req.authSession.role==='client' && req.authSession.slug!==slug) return res.status(403).json({ error:'Forbidden' }); const data=await buildClientDashboard(slug); if(!data) return res.status(404).json({ error:'Client tidak ditemukan' }); await auditLog(slug, req.authSession.role, 'dashboard.view'); res.json(data); });
