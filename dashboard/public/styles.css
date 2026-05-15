@@ -1815,3 +1815,54 @@ ul,
     font-size: 13px !important;
   }
 }
+
+
+/* Knowledge section row title polish: keep title and status badge on one clean row. */
+.section-manager .section-row > div:first-child {
+  padding-right: 0 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  grid-template-areas:
+    "title badge"
+    "sub sub" !important;
+  align-items: center !important;
+  column-gap: 14px !important;
+  row-gap: 18px !important;
+}
+.section-manager .section-row-title {
+  grid-area: title !important;
+  padding-right: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  font-size: 17px !important;
+  line-height: 1.2 !important;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  grid-area: badge !important;
+  position: static !important;
+  justify-self: end !important;
+  align-self: center !important;
+  transform: none !important;
+  min-width: 58px !important;
+  height: 38px !important;
+  margin: 0 !important;
+}
+.section-manager .section-row-sub {
+  grid-area: sub !important;
+  padding-right: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  line-height: 1.6 !important;
+}
+@media(max-width:420px){
+  .section-manager .section-row-title {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+}
