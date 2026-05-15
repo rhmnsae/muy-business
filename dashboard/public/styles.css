@@ -727,3 +727,57 @@ ul,
   .three > .card { min-height: 180px; }
   .three > .card h3 { min-height: 0; }
 }
+
+
+/* Analytics page spacing: give KPI, chart, ratio, and detail cards more breathing room. */
+.kpi-row + .two,
+.kpi-row + .two + .health-grid,
+.health-grid + .two {
+  margin-top: 34px !important;
+}
+.kpi-row + .two,
+.health-grid + .two {
+  gap: 34px !important;
+  align-items: stretch !important;
+}
+.kpi-row + .two > .card,
+.health-grid + .two > .card {
+  border-width: 4px !important;
+  border-radius: 28px !important;
+  box-shadow: 11px 11px 0 var(--line) !important;
+  padding: 30px !important;
+  min-height: 360px;
+}
+.health-grid {
+  margin-top: 34px !important;
+  gap: 28px !important;
+}
+.health-grid > .insight-card {
+  min-height: 150px !important;
+  padding: 24px !important;
+}
+.kpi-row {
+  margin-bottom: 8px !important;
+}
+@media(max-width:900px){
+  .kpi-row + .two,
+  .health-grid + .two {
+    gap: 28px !important;
+  }
+  .kpi-row + .two > .card,
+  .health-grid + .two > .card {
+    min-height: auto;
+  }
+}
+@media(max-width:620px){
+  .kpi-row + .two,
+  .kpi-row + .two + .health-grid,
+  .health-grid + .two {
+    margin-top: 24px !important;
+  }
+  .kpi-row + .two > .card,
+  .health-grid + .two > .card {
+    padding: 22px !important;
+    box-shadow: 7px 7px 0 var(--line) !important;
+  }
+}
