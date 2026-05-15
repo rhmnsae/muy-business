@@ -1159,3 +1159,114 @@ ul,
     margin-right: -4px;
   }
 }
+
+
+/* Knowledge section rows final precision: clean 3-column layout with aligned badge and actions. */
+.section-manager .section-row {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(190px, auto) !important;
+  grid-template-areas:
+    "title status actions"
+    "sub   status actions" !important;
+  align-items: center !important;
+  column-gap: 18px !important;
+  row-gap: 8px !important;
+  min-height: 142px !important;
+  padding: 22px !important;
+  border-width: 4px !important;
+  border-radius: 26px !important;
+  background: linear-gradient(135deg,#fff 0%,#f6fff9 100%) !important;
+  box-shadow: 7px 7px 0 var(--line) !important;
+}
+.section-manager .section-row > div:first-child {
+  display: contents !important;
+}
+.section-manager .section-row-title {
+  grid-area: title !important;
+  font-size: 16px !important;
+  line-height: 1.25 !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.25px;
+  max-width: 210px;
+}
+.section-manager .section-row-sub {
+  grid-area: sub !important;
+  font-size: 12px !important;
+  line-height: 1.55 !important;
+  font-weight: 850 !important;
+  color: var(--muted) !important;
+  margin: 0 !important;
+  max-width: 220px;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  grid-area: status !important;
+  align-self: center !important;
+  justify-self: center !important;
+  min-width: 58px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 12px !important;
+  margin: 0 !important;
+  border-width: 3px !important;
+  border-radius: 999px !important;
+  background: var(--green) !important;
+  color: var(--ink) !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  box-shadow: 3px 3px 0 var(--line) !important;
+}
+.section-manager .section-row.missing .pill,
+.section-manager .section-row.missing .tag {
+  background: var(--yellow) !important;
+}
+.section-manager .section-row-actions {
+  grid-area: actions !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, 90px) !important;
+  align-items: center !important;
+  justify-content: end !important;
+  gap: 14px !important;
+  min-width: 194px !important;
+  width: 194px !important;
+}
+.section-manager .section-row-actions button {
+  width: 90px !important;
+  min-width: 90px !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  padding: 0 10px !important;
+  border-width: 4px !important;
+  border-radius: 17px !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  box-shadow: 5px 5px 0 var(--line) !important;
+}
+.section-manager .section-row-actions button:hover {
+  transform: translate(2px,2px);
+  box-shadow: 3px 3px 0 var(--line) !important;
+}
+@media(max-width:520px){
+  .section-manager .section-row {
+    grid-template-columns: 1fr auto !important;
+    grid-template-areas:
+      "title status"
+      "sub sub"
+      "actions actions" !important;
+    min-height: 0 !important;
+  }
+  .section-manager .section-row-title,
+  .section-manager .section-row-sub { max-width: none; }
+  .section-manager .section-row-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 1fr 1fr !important;
+    justify-content: stretch !important;
+  }
+  .section-manager .section-row-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
