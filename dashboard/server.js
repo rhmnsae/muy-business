@@ -329,7 +329,7 @@ function emptyKnowledgeBase() { return ''; }
 function isReservedNonProductionClient(slug, name='') {
   const s = String(slug || '').toLowerCase();
   const n = String(name || '').toLowerCase();
-  return !s || s === 'demo' || s === 'demo-client' || s.startsWith('audit-') || s.startsWith('final-audit') || s.startsWith('supabase-audit') || /(demo|dummy|sample|contoh|test|audit|fake|lorem)/i.test(n);
+  return !s || /(demo|dummy|sample|contoh|test|audit|fake|lorem)/i.test(s) || /(demo|dummy|sample|contoh|test|audit|fake|lorem)/i.test(n);
 }
 async function backfillSupabaseRuntime() {
   const rows = await query(`select slug from clients order by created_at desc`);

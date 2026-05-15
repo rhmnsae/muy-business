@@ -6,4 +6,4 @@ if [ -f "$OPENCLAW_HOME/.openclaw/.env" ]; then
   source "$OPENCLAW_HOME/.openclaw/.env"
   set +a
 fi
-exec openclaw gateway --port 18790 "$@"
+exec "$HOME/.npm-global/bin/openclaw" gateway --port 18790 "$@"
