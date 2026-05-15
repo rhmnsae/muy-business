@@ -378,3 +378,193 @@ textarea{min-height:360px;resize:vertical;line-height:1.65;font-family:ui-monosp
     margin-top: 16px !important;
   }
 }
+
+
+/* Global spacing hardening: keep every dashboard block/card from feeling cramped. */
+:root{
+  --space-card-stack: 22px;
+  --space-inner-stack: 18px;
+  --space-grid-gap: 24px;
+}
+.grid,
+.two,
+.three,
+.panel,
+.kpi-row,
+.admin-health,
+.health-grid,
+.insight-grid,
+.settings-grid,
+.admin-client-grid,
+.customer-preview,
+.kb-layout,
+.kb-editor-layout,
+.kb-card-grid,
+.feature-grid,
+.pricing-grid,
+.faq-grid,
+.problem-cards {
+  gap: var(--space-grid-gap) !important;
+}
+.card,
+.kpi,
+.feature-card,
+.conversation,
+.customer-card,
+.admin-client-card,
+.insight-card,
+.softbox,
+.logbox,
+.preview-box,
+.connected-box,
+.loading-card,
+.summary-pill,
+.section-row,
+.metric-row,
+.checkitem,
+.copybox,
+.kb-edit-card {
+  overflow: visible;
+}
+.card > * + *:not(.hidden),
+.connected-box > * + *:not(.hidden),
+.preview-box > * + *:not(.hidden),
+.softbox > * + *:not(.hidden),
+.feature-card > * + *:not(.hidden),
+.insight-card > * + *:not(.hidden),
+.admin-client-card > * + *:not(.hidden),
+.customer-card > * + *:not(.hidden),
+.conversation > * + *:not(.hidden),
+.kb-edit-card > * + *:not(.hidden),
+.form > * + *:not(.hidden),
+.brand > * + *:not(.hidden) {
+  margin-top: var(--space-inner-stack);
+}
+.card > h3 + *,
+.feature-card > h4 + *,
+.insight-card > b + *,
+.admin-client-card h3 + *,
+.customer-card b + *,
+.conversation b + * {
+  margin-top: 14px !important;
+}
+.card > .two,
+.card > .three,
+.card > .grid,
+.card > .identity-grid,
+.card > .health-grid,
+.card > .insight-grid,
+.card > .settings-grid,
+.card > .admin-metrics,
+.card > .connected-details,
+.card > .section-summary,
+.card > .section-manager,
+.card > .customer-toolbar,
+.card > .actionbar,
+.card > .row,
+.card > .export-actions {
+  margin-top: 22px !important;
+}
+.identity-grid,
+.connected-details,
+.admin-metrics,
+.section-summary,
+.health-grid,
+.insight-grid,
+.settings-grid,
+.customer-toolbar,
+.admin-status-line,
+.status-row,
+.actionbar,
+.row,
+.export-actions,
+.admin-actions,
+.kb-actionbar,
+.kb-card-actions,
+.section-row-actions,
+.quick-nav {
+  gap: 16px !important;
+  row-gap: 16px !important;
+}
+.metric-row,
+.connected-row,
+.checkitem,
+.section-row,
+.customer-toolbar,
+.page-title-row,
+.admin-client-head,
+.status-row {
+  padding: 16px 18px !important;
+}
+.metric-row + .metric-row,
+.connected-row + .connected-row,
+.conversation + .conversation,
+.customer-card + .customer-card,
+.checkitem + .checkitem,
+.section-row + .section-row,
+.feature-card + .feature-card,
+.insight-card + .insight-card,
+.softbox + .softbox,
+.logbox + .logbox,
+.preview-box + .preview-box,
+.copybox + .copybox {
+  margin-top: var(--space-card-stack) !important;
+}
+.admin-client-grid > *,
+.kb-card-grid > *,
+.insight-grid > *,
+.health-grid > *,
+.settings-grid > *,
+.grid > *,
+.two > *,
+.three > *,
+.panel > *,
+.kpi-row > *,
+.admin-health > * {
+  min-width: 0;
+}
+.card > button,
+.feature-card > button,
+.three .card > button {
+  margin-top: 22px !important;
+}
+.step-list,
+ul,
+#customersList,
+.section-manager,
+.kb-card-grid,
+.admin-client-grid {
+  gap: 18px !important;
+}
+.step-list li + li {
+  margin-top: 0 !important;
+}
+.logbox {
+  margin-top: 18px !important;
+}
+.page-title-row {
+  gap: 18px !important;
+  margin-bottom: 26px !important;
+}
+.kb-editor-layout,
+.kb-layout,
+.panel,
+.overview-layout {
+  margin-top: 6px;
+}
+@media(max-width:900px){
+  :root{--space-grid-gap:22px;--space-card-stack:20px;--space-inner-stack:16px}
+}
+@media(max-width:620px){
+  :root{--space-grid-gap:18px;--space-card-stack:16px;--space-inner-stack:14px}
+  .metric-row,
+  .connected-row,
+  .checkitem,
+  .section-row,
+  .customer-toolbar,
+  .page-title-row,
+  .admin-client-head,
+  .status-row {
+    padding: 14px !important;
+  }
+}
