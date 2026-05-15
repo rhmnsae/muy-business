@@ -1866,3 +1866,26 @@ ul,
     text-overflow: clip !important;
   }
 }
+
+
+/* Knowledge section title: allow two clean lines, never ellipsis. */
+.section-manager .section-row-title {
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  line-clamp: 2 !important;
+  max-height: calc(1.28em * 2) !important;
+  line-height: 1.28 !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+.section-manager .section-row > div:first-child {
+  align-items: start !important;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  align-self: start !important;
+}
