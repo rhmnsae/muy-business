@@ -1482,3 +1482,98 @@ ul,
 .compact-card {
   scroll-margin-top: 28px;
 }
+
+
+/* Knowledge section row exact alignment: status at far-right, actions perfectly centered bottom. */
+.section-manager .section-row {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-areas:
+    "content"
+    "actions" !important;
+  align-items: stretch !important;
+  min-height: 220px !important;
+  padding: 28px 30px 30px !important;
+  row-gap: 24px !important;
+}
+.section-manager .section-row > div:first-child {
+  grid-area: content !important;
+  display: block !important;
+  padding-right: 82px !important;
+}
+.section-manager .section-row-title {
+  display: block !important;
+  max-width: none !important;
+  margin: 0 0 16px !important;
+  font-size: 18px !important;
+  line-height: 1.22 !important;
+}
+.section-manager .section-row-sub {
+  display: block !important;
+  max-width: 280px !important;
+  margin: 0 !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  position: absolute !important;
+  top: 26px !important;
+  right: 30px !important;
+  left: auto !important;
+  transform: none !important;
+  margin: 0 !important;
+  min-width: 58px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.section-manager .section-row-actions {
+  grid-area: actions !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 24px !important;
+  align-self: end !important;
+  justify-self: center !important;
+  margin: 0 auto !important;
+}
+.section-manager .section-row-actions button {
+  width: 104px !important;
+  min-width: 104px !important;
+  height: 58px !important;
+  min-height: 58px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+@media(max-width:520px){
+  .section-manager .section-row {
+    min-height: 210px !important;
+    padding: 24px 22px 26px !important;
+  }
+  .section-manager .section-row > div:first-child {
+    padding-right: 72px !important;
+  }
+  .section-manager .section-row .pill,
+  .section-manager .section-row .tag {
+    top: 22px !important;
+    right: 22px !important;
+  }
+  .section-manager .section-row-actions {
+    gap: 16px !important;
+  }
+  .section-manager .section-row-actions button {
+    width: 96px !important;
+    min-width: 96px !important;
+  }
+}
