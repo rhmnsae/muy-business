@@ -2162,3 +2162,36 @@ body.sidebar-collapsed .nav-icon {
   body.sidebar-collapsed .side-head { grid-template-columns: minmax(220px,1fr) 48px !important; }
   body.sidebar-collapsed .nav button { justify-content:flex-start !important; padding: 0 16px !important; }
 }
+
+
+/* Sidebar simple neo-brutalist icons + reliable collapse click target. */
+.side-toggle {
+  cursor: pointer !important;
+  position: relative !important;
+  z-index: 20 !important;
+  user-select: none !important;
+}
+.nav-icon {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.8px !important;
+  box-shadow: 3px 3px 0 var(--line) !important;
+}
+body.sidebar-collapsed .nav-icon {
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 14px !important;
+  font-size: 12px !important;
+}
+body.sidebar-collapsed .nav button {
+  width: 64px !important;
+  min-width: 64px !important;
+  margin-inline: auto !important;
+}
+body.sidebar-collapsed .nav {
+  justify-items: center !important;
+}
