@@ -1,0 +1,44 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+*secret*
+*credential*
+creds.json
+
+# OpenClaw runtime/private data
+.openclaw/
+reset-backup-*/
+clients.json
+dashboard-auth.json
+*.log
+*.sqlite
+*.db
+
+# Supabase runtime data
+supabase/volumes/db/data/
+supabase/volumes/storage/
+supabase/volumes/logs/
+supabase/backup.sql
+supabase/.env
+supabase/.env.bak.*
+supabase/docker-compose.yml.bak.*
+
+# Generated/runtime
+coverage/
+dist/
+build/
+.DS_Store
+*.tmp
+*.bak
+*.last-good

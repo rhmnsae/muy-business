@@ -1,0 +1,1 @@
+{"name":"muy-business-dashboard","version":"0.1.0","private":true,"type":"module","scripts":{"start":"node server.js"},"dependencies":{"baileys":"^7.0.0-rc11","express":"latest","pg":"^8.20.0","qrcode":"^1.5.4"}}
