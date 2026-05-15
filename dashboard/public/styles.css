@@ -658,3 +658,72 @@ ul,
   .kpi-row { grid-template-columns: 1fr !important; }
   .kpi-row > .kpi { min-height: 124px !important; padding: 20px !important; }
 }
+
+
+/* Operational page precision: aligned equal cards and cleaner checklist layout. */
+.three {
+  align-items: stretch !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+.three > .card {
+  height: 100% !important;
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  border-width: 4px;
+  border-radius: 26px;
+  box-shadow: 9px 9px 0 var(--line);
+}
+.three > .card h3 {
+  min-height: 58px;
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 18px !important;
+}
+.three > .card p.muted {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  line-height: 1.8;
+}
+.three > .card:nth-child(6n+1){background:linear-gradient(135deg,#fff 0%,#efe7ff 100%)}
+.three > .card:nth-child(6n+2){background:linear-gradient(135deg,#fff 0%,#ecfff3 100%)}
+.three > .card:nth-child(6n+3){background:linear-gradient(135deg,#fff 0%,#fff7d6 100%)}
+.three > .card:nth-child(6n+4){background:linear-gradient(135deg,#fff 0%,#e3f8ff 100%)}
+.three > .card:nth-child(6n+5){background:linear-gradient(135deg,#fff 0%,#ffe8ed 100%)}
+.three > .card:nth-child(6n+6){background:linear-gradient(135deg,#fff 0%,#e5fff7 100%)}
+.three > .card:first-child {
+  min-height: 100%;
+}
+.three > .card:first-child .checkitem {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 18px !important;
+  border-width: 3px;
+  border-radius: 18px;
+  box-shadow: 4px 4px 0 var(--line);
+}
+.three > .card:first-child .checkitem span {
+  line-height: 1.35;
+  font-weight: 950;
+}
+.three > .card:first-child .checkitem b {
+  min-width: 76px;
+  text-align: center;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  padding: 6px 10px;
+  box-shadow: 2px 2px 0 var(--line);
+}
+@media(max-width:1220px){
+  .three { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+}
+@media(max-width:620px){
+  .three { grid-template-columns: 1fr !important; }
+  .three > .card { min-height: 180px; }
+  .three > .card h3 { min-height: 0; }
+}
