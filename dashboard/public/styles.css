@@ -1325,3 +1325,86 @@ ul,
     grid-template-columns: 1fr !important;
   }
 }
+
+
+/* Knowledge section row action placement: buttons stay at the bottom, content stays neat on top. */
+.section-manager .section-row {
+  grid-template-columns: minmax(0, 1fr) minmax(190px, auto) !important;
+  grid-template-areas:
+    "content content"
+    "status  actions" !important;
+  align-items: end !important;
+  min-height: 210px !important;
+  padding: 26px !important;
+  row-gap: 22px !important;
+  column-gap: 20px !important;
+}
+.section-manager .section-row > div:first-child {
+  display: grid !important;
+  grid-area: content !important;
+  grid-template-columns: minmax(0,1fr) auto !important;
+  grid-template-areas:
+    "title badge"
+    "sub   badge" !important;
+  align-items: start !important;
+  column-gap: 18px !important;
+  row-gap: 10px !important;
+  width: 100% !important;
+}
+.section-manager .section-row-title {
+  grid-area: title !important;
+  max-width: none !important;
+  font-size: 17px !important;
+  line-height: 1.22 !important;
+}
+.section-manager .section-row-sub {
+  grid-area: sub !important;
+  max-width: 260px !important;
+  margin-top: 0 !important;
+  line-height: 1.65 !important;
+}
+.section-manager .section-row .pill,
+.section-manager .section-row .tag {
+  grid-area: badge !important;
+  align-self: start !important;
+  justify-self: end !important;
+}
+.section-manager .section-row-actions {
+  grid-area: actions !important;
+  align-self: end !important;
+  justify-self: end !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, 96px) !important;
+  width: 210px !important;
+  min-width: 210px !important;
+  gap: 18px !important;
+}
+.section-manager .section-row-actions button {
+  width: 96px !important;
+  min-width: 96px !important;
+  height: 54px !important;
+  min-height: 54px !important;
+}
+@media(max-width:620px){
+  .section-manager .section-row {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "content"
+      "actions" !important;
+    min-height: 190px !important;
+  }
+  .section-manager .section-row > div:first-child {
+    grid-template-columns: 1fr auto !important;
+  }
+  .section-manager .section-row-sub { max-width: none !important; }
+  .section-manager .section-row-actions {
+    width: 100% !important;
+    min-width: 0 !important;
+    grid-template-columns: 1fr 1fr !important;
+    justify-self: stretch !important;
+  }
+  .section-manager .section-row-actions button {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
