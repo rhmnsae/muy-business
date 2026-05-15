@@ -923,3 +923,35 @@ ul,
 @media(max-width:420px){
   .kb-actionbar { grid-template-columns: 1fr !important; }
 }
+
+
+/* Knowledge section row actions: keep buttons horizontal, not stacked. */
+.section-row-actions {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  min-width: 190px !important;
+}
+.section-row-actions button {
+  width: auto !important;
+  min-width: 84px !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+}
+.section-row {
+  grid-template-columns: minmax(0, 1fr) max-content !important;
+}
+@media(max-width:620px){
+  .section-row-actions {
+    justify-content: stretch !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  .section-row-actions button {
+    flex: 1 1 0 !important;
+  }
+}
