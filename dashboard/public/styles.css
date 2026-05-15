@@ -1772,3 +1772,46 @@ ul,
   .qrbox img { max-width: min(280px, 92%) !important; padding: 14px !important; }
   .qr-help p { min-height: auto; padding: 14px; }
 }
+
+
+/* WhatsApp status badge cleanup: remove update text, enlarge badge, align left with info card. */
+.pairing-status-row {
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 0 24px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  gap: 0 !important;
+}
+.pairing-status-row .pill,
+.pairing-status-row .tag {
+  min-width: 168px !important;
+  min-height: 58px !important;
+  padding: 0 24px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-width: 4px !important;
+  border-radius: 999px !important;
+  box-shadow: 5px 5px 0 var(--line) !important;
+  font-size: 14px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.2px !important;
+  text-transform: lowercase !important;
+  background: #fff !important;
+}
+.two:has(.qrbox) .softbox {
+  margin-top: 0 !important;
+}
+@media(max-width:620px){
+  .pairing-status-row .pill,
+  .pairing-status-row .tag {
+    min-width: 150px !important;
+    min-height: 52px !important;
+    font-size: 13px !important;
+  }
+}
