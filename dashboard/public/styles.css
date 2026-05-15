@@ -2444,3 +2444,44 @@ body.sidebar-collapsed .nav button.active {
   background: var(--yellow) !important;
   box-shadow: 6px 6px 0 var(--line) !important;
 }
+
+
+/* Sidebar collapse icon final centering: absolute center inside one clean card. */
+.side-toggle {
+  position: relative !important;
+  display: block !important;
+  text-indent: -9999px !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
+}
+.side-toggle::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 17px !important;
+  height: 17px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  border-left: 5px solid var(--line) !important;
+  border-bottom: 5px solid var(--line) !important;
+  border-radius: 2px !important;
+  transform-origin: 50% 50% !important;
+  transform: translate(-42%,-50%) rotate(45deg) !important;
+  box-sizing: border-box !important;
+}
+body.sidebar-collapsed .side-toggle::before {
+  transform: translate(-58%,-50%) rotate(225deg) !important;
+}
+.side-toggle::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  width: 34px !important;
+  height: 34px !important;
+  transform: translate(-50%,-50%) !important;
+  border: 0 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+}
