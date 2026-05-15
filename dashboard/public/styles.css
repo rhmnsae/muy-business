@@ -1270,3 +1270,58 @@ ul,
     min-width: 0 !important;
   }
 }
+
+
+/* Customers toolbar one-line alignment: search, filter, and export stay in one horizontal row. */
+.customer-toolbar {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 1fr) auto !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
+.customer-toolbar .row {
+  display: grid !important;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, 220px) !important;
+  align-items: center !important;
+  gap: 16px !important;
+  width: 100% !important;
+  flex: none !important;
+}
+.customer-toolbar .row input,
+.customer-toolbar .row select {
+  width: 100% !important;
+  margin: 0 !important;
+}
+.customer-toolbar .export-actions {
+  display: grid !important;
+  grid-template-columns: repeat(2, 132px) !important;
+  align-items: center !important;
+  justify-content: end !important;
+  gap: 16px !important;
+  width: auto !important;
+  flex: none !important;
+}
+.customer-toolbar .export-actions button {
+  width: 132px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+  margin: 0 !important;
+}
+@media(max-width:920px){
+  .customer-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+  .customer-toolbar .export-actions {
+    justify-content: stretch !important;
+    width: 100% !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .customer-toolbar .export-actions button {
+    width: 100% !important;
+  }
+}
+@media(max-width:620px){
+  .customer-toolbar .row {
+    grid-template-columns: 1fr !important;
+  }
+}
