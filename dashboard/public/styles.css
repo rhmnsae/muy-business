@@ -2485,3 +2485,367 @@ body.sidebar-collapsed .side-toggle::before {
   background: transparent !important;
   pointer-events: none !important;
 }
+
+
+/* Admin dashboard full professional polish: align admin pages with refined client dashboard. */
+body.admin-mode .main {
+  background:
+    radial-gradient(circle at 18% 0%, rgba(126,58,242,.10) 0 170px, transparent 172px),
+    radial-gradient(circle at 86% 12%, rgba(255,214,10,.18) 0 140px, transparent 142px),
+    linear-gradient(180deg,#fff 0%,#fbf8ff 42%,#f7fff9 100%) !important;
+}
+body.admin-mode .top {
+  margin-bottom: 34px !important;
+  padding: 26px 28px !important;
+  border: 4px solid var(--line) !important;
+  border-radius: 30px !important;
+  background: linear-gradient(135deg,#fff 0%,#f3ecff 58%,#fff6c7 100%) !important;
+  box-shadow: 10px 10px 0 var(--line) !important;
+  align-items: center !important;
+  gap: 24px !important;
+}
+body.admin-mode .top h1 {
+  font-size: clamp(34px,4vw,54px) !important;
+  line-height: .95 !important;
+  letter-spacing: -2px !important;
+}
+body.admin-mode .top p {
+  max-width: 820px !important;
+  margin-top: 10px !important;
+  font-weight: 900 !important;
+  line-height: 1.55 !important;
+}
+body.admin-mode .top-actions {
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 14px !important;
+}
+body.admin-mode .top-actions button {
+  min-height: 54px !important;
+  white-space: nowrap !important;
+}
+body.admin-mode .admin-health.overview-kpis {
+  display: grid !important;
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  gap: 24px !important;
+  margin-bottom: 34px !important;
+}
+body.admin-mode .kpi {
+  min-height: 148px !important;
+  padding: 24px !important;
+  border: 4px solid var(--line) !important;
+  border-radius: 30px !important;
+  box-shadow: 9px 9px 0 var(--line) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  overflow: hidden !important;
+}
+body.admin-mode .kpi small {
+  font-size: 12px !important;
+  font-weight: 1000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .08em !important;
+  color: rgba(21,16,25,.72) !important;
+}
+body.admin-mode .kpi b {
+  font-size: clamp(30px,3.4vw,46px) !important;
+  line-height: .95 !important;
+  letter-spacing: -1.5px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+body.admin-mode .overview-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0,1.55fr) minmax(360px,.75fr) !important;
+  gap: 30px !important;
+  align-items: stretch !important;
+  margin-bottom: 34px !important;
+}
+body.admin-mode .card {
+  border-width: 4px !important;
+  border-radius: 30px !important;
+  box-shadow: 10px 10px 0 var(--line) !important;
+}
+body.admin-mode .card h3 {
+  font-size: 24px !important;
+  line-height: 1.12 !important;
+  letter-spacing: -.7px !important;
+  margin-bottom: 20px !important;
+}
+body.admin-mode .overview-chart-card,
+body.admin-mode .overview-control-card {
+  min-height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+body.admin-mode .overview-chart-card .chart {
+  flex: 1 1 auto !important;
+  min-height: 360px !important;
+}
+body.admin-mode .overview-control-card .actionbar {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 16px !important;
+  margin: 0 !important;
+}
+body.admin-mode .overview-control-card .actionbar button {
+  width: 100% !important;
+  min-height: 58px !important;
+  justify-content: center !important;
+}
+body.admin-mode .softbox {
+  border-width: 4px !important;
+  border-radius: 24px !important;
+  padding: 20px !important;
+  line-height: 1.75 !important;
+  font-weight: 900 !important;
+}
+body.admin-mode .page-title-row {
+  align-items: center !important;
+  gap: 22px !important;
+  padding-bottom: 22px !important;
+  margin-bottom: 26px !important;
+  border-bottom: 4px dashed rgba(21,16,25,.18) !important;
+}
+body.admin-mode .page-title-row h3 {
+  margin-bottom: 8px !important;
+}
+body.admin-mode .admin-client-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  gap: 28px !important;
+  align-items: stretch !important;
+}
+body.admin-mode .admin-client-card {
+  min-height: 420px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 20px !important;
+  padding: 24px !important;
+  border: 4px solid var(--line) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(135deg,#fff 0%,#fbf8ff 54%,#ecfff3 100%) !important;
+  box-shadow: 8px 8px 0 var(--line) !important;
+  overflow: visible !important;
+}
+body.admin-mode .admin-client-head {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) auto !important;
+  align-items: start !important;
+  gap: 16px !important;
+}
+body.admin-mode .admin-client-head h3 {
+  margin: 0 !important;
+  font-size: 23px !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+body.admin-mode .admin-status-line {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  gap: 12px !important;
+}
+body.admin-mode .tag,
+body.admin-mode .pill {
+  min-height: 38px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-width: 3px !important;
+  border-radius: 999px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  font-weight: 1000 !important;
+  line-height: 1.1 !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+body.admin-mode .admin-metrics {
+  display: grid !important;
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  gap: 14px !important;
+}
+body.admin-mode .admin-metric {
+  min-height: 96px !important;
+  padding: 16px 12px !important;
+  border: 3px solid var(--line) !important;
+  border-radius: 20px !important;
+  background: #fff !important;
+  box-shadow: 4px 4px 0 var(--line) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 8px !important;
+}
+body.admin-mode .admin-metric span {
+  font-size: 11px !important;
+  font-weight: 1000 !important;
+  text-transform: uppercase !important;
+  letter-spacing: .04em !important;
+  color: var(--muted) !important;
+}
+body.admin-mode .admin-metric b {
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+body.admin-mode .connected-details {
+  display: grid !important;
+  gap: 12px !important;
+}
+body.admin-mode .connected-row {
+  min-height: 54px !important;
+  display: grid !important;
+  grid-template-columns: minmax(130px,.45fr) minmax(0,1fr) !important;
+  align-items: center !important;
+  gap: 16px !important;
+  padding: 12px 14px !important;
+  border: 3px solid var(--line) !important;
+  border-radius: 18px !important;
+  background: rgba(255,255,255,.92) !important;
+  box-shadow: 3px 3px 0 var(--line) !important;
+}
+body.admin-mode .connected-row span,
+body.admin-mode .connected-row b {
+  min-width: 0 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+body.admin-mode .admin-actions {
+  margin-top: auto !important;
+  display: grid !important;
+  grid-template-columns: repeat(4,minmax(0,1fr)) !important;
+  gap: 12px !important;
+  padding-top: 4px !important;
+}
+body.admin-mode .admin-actions button {
+  min-width: 0 !important;
+  min-height: 54px !important;
+  padding-inline: 10px !important;
+  font-size: 12px !important;
+  border-radius: 18px !important;
+}
+body.admin-mode .panel {
+  display: grid !important;
+  grid-template-columns: minmax(360px,.45fr) minmax(0,1fr) !important;
+  gap: 32px !important;
+  align-items: start !important;
+}
+body.admin-mode .panel > .card:first-child {
+  position: sticky !important;
+  top: 24px !important;
+}
+body.admin-mode .field {
+  margin-bottom: 18px !important;
+}
+body.admin-mode label {
+  margin-bottom: 9px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -.2px !important;
+}
+body.admin-mode input,
+body.admin-mode select,
+body.admin-mode textarea {
+  border-width: 4px !important;
+  border-radius: 20px !important;
+  min-height: 56px !important;
+  box-shadow: 4px 4px 0 var(--line) !important;
+  font-weight: 850 !important;
+}
+body.admin-mode textarea {
+  line-height: 1.65 !important;
+}
+body.admin-mode .row,
+body.admin-mode .actionbar {
+  gap: 16px !important;
+  flex-wrap: wrap !important;
+}
+body.admin-mode .row button,
+body.admin-mode .actionbar button {
+  min-height: 56px !important;
+}
+body.admin-mode .client {
+  border: 4px solid var(--line) !important;
+  border-radius: 22px !important;
+  padding: 18px !important;
+  margin-bottom: 16px !important;
+  background: #fff !important;
+  box-shadow: 5px 5px 0 var(--line) !important;
+  cursor: pointer !important;
+}
+body.admin-mode .client.active {
+  background: linear-gradient(135deg,#fff6c7 0%,#efe7ff 100%) !important;
+  box-shadow: 7px 7px 0 var(--line) !important;
+}
+body.admin-mode .kb-layout {
+  display: grid !important;
+  grid-template-columns: minmax(0,1fr) minmax(330px,.42fr) !important;
+  gap: 28px !important;
+  align-items: start !important;
+}
+body.admin-mode #kbText {
+  min-height: 680px !important;
+  resize: vertical !important;
+}
+body.admin-mode .kb-tools {
+  position: sticky !important;
+  top: 24px !important;
+}
+body.admin-mode .score {
+  min-height: 140px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 4px solid var(--line) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(135deg,#fff6c7,#ecfff3) !important;
+  box-shadow: 6px 6px 0 var(--line) !important;
+  font-size: 54px !important;
+  font-weight: 1000 !important;
+  letter-spacing: -2px !important;
+}
+body.admin-mode .settings-grid,
+body.admin-mode .two:has(#newAdminUser) {
+  display: grid !important;
+  grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  gap: 32px !important;
+  align-items: stretch !important;
+}
+body.admin-mode .two:has(#newAdminUser) > .card {
+  min-height: 360px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+body.admin-mode .two:has(#newAdminUser) > .card .row,
+body.admin-mode .two:has(#newAdminUser) > .card button:last-child {
+  margin-top: auto !important;
+}
+@media(max-width:1180px){
+  body.admin-mode .admin-health.overview-kpis { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  body.admin-mode .overview-layout,
+  body.admin-mode .panel,
+  body.admin-mode .kb-layout { grid-template-columns: 1fr !important; }
+  body.admin-mode .panel > .card:first-child,
+  body.admin-mode .kb-tools { position: static !important; }
+}
+@media(max-width:900px){
+  body.admin-mode .top { align-items: flex-start !important; padding: 22px !important; }
+  body.admin-mode .top-actions { flex-wrap: wrap !important; }
+  body.admin-mode .admin-client-grid { grid-template-columns: 1fr !important; }
+  body.admin-mode .settings-grid,
+  body.admin-mode .two:has(#newAdminUser) { grid-template-columns: 1fr !important; }
+}
+@media(max-width:620px){
+  body.admin-mode .admin-health.overview-kpis { grid-template-columns: 1fr !important; }
+  body.admin-mode .admin-status-line,
+  body.admin-mode .admin-metrics,
+  body.admin-mode .admin-actions { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  body.admin-mode .connected-row { grid-template-columns: 1fr !important; gap: 6px !important; }
+  body.admin-mode .panel { gap: 24px !important; }
+}
